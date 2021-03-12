@@ -17,6 +17,7 @@ export default async (fastify: FastifyInstance) => {
       const payload = request.body;
       try {
         const result = await serv.create({ em: request.em, payload })
+        console.log(result)
         reply.send(result)
       } catch (err) {
         console.log(err)

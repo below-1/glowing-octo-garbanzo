@@ -23,10 +23,4 @@ export class Product {
 
     @Property({ nullable: true })
     content?: string;
-
-    public fill (d: Partial<Product>) {
-        this.title = d.title!;
-        this.summary = d.summary!;
-        this.content = d.content;
-    }
 }

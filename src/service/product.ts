@@ -1,4 +1,4 @@
-import { QueryOrder } from '@mikro-orm/core'
+import { QueryOrder, wrap } from '@mikro-orm/core'
 import { EntityManager } from '@mikro-orm/postgresql'
 import { Product } from '../entity/Product'
 import { Category } from '../entity/Category'
@@ -27,11 +27,11 @@ export interface FindOptions {
 export async function create ({ em, payload } : CreateInput) {
   let product = new Product()
   let categories = await Promise.all(payload.categories_id.map(cid => em.getReference(Category, cid)))
-  product.fill(payload)
-  product.categories.set(categories);
-  em.persist(product);
-  await em.flush();
-  return product;
+  wrap(product).assign(payload, { em })
+  product.categories.set(categories)
+  em.persist(product)
+  await em.flush()
+  return product
 }
 
 export async function update ({ em, payload, id } : UpdateInput) {
@@ -39,7 +39,7 @@ export async function update ({ em, payload, id } : UpdateInput) {
   if (!product) {
     throw new Error('NOT_FOUND');
   }
-  product.fill(payload)
+  wrap(product).assign(payload)
   em.persist(product)
   await em.flush()
   return product

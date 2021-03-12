@@ -2,27 +2,30 @@ import { FastifyInstance } from 'fastify'
 import request from 'supertest'
 import { setup } from './setup'
 
-var token: string;
-var app: FastifyInstance;
-
-beforeAll(async () => {
-  try {
-    const setup_result = await setup()
-    token = setup_result.token;
-    app = setup_result.app;
-  } catch (err) {
-    console.log(err)
-    console.log('test fixture fail successfully')
-  }
-})
-
-afterAll(async () => {
-  await app.close();
-})
 
 describe("testing category API", () => {
 
+  var token: string;
+  var app: FastifyInstance;
   const id = 230
+
+  beforeAll(async () => {
+    const setup_result = await setup()
+    token = setup_result.token;
+    app = setup_result.app;
+    await request(app.server)
+      .delete(`/api/v1/category/${id}`)
+      .set('authorization', token)
+    console.log(`delete ${id}`)
+  })
+
+  afterAll(async () => {
+    console.log('running clean up')
+    await request(app.server)
+      .delete(`/api/v1/category/${id}`)
+      .set('authorization', token)
+    await app.close();
+  })
 
   test("testing creation with provided ID", async () => {
     const response = await request(app.server)

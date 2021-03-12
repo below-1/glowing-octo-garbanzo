@@ -26,19 +26,10 @@ async function prepare_db () {
 }
 
 export async function setup () {
-  await prepare_db()
+  // await prepare_db()
   const app = await create_app()
   const address = await app.listen(5000)
-
   const username = 'adminzero'
-
-  const register_result = await api.post('/auth/register', {
-    username,
-    password: username,
-    first_name: 'jordan',
-    last_name: 'meta'
-  })
-
   const login_response = await api.post('/auth/login', {
     username,
     password: username
