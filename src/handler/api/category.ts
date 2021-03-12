@@ -2,11 +2,11 @@ import { FastifyInstance } from 'fastify'
 import * as fastify from 'fastify';
 import * as serv from '../../service/category'
 import { ID } from './commons'
-import { Data } from '../../entity/Category'
+import { Category } from '../../entity/Category'
 
 export default async (fastify: FastifyInstance) => {
 
-  fastify.post<{ Body: Data }>('/', {
+  fastify.post<{ Body: Partial<Category> }>('/', {
     handler: async (request, reply) => {
       const payload = request.body;
       try {
@@ -22,7 +22,7 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
-  fastify.put<{ Params: ID, Body: Data }>('/:id', {
+  fastify.put<{ Params: ID, Body: Partial<Category> }>('/:id', {
     handler: async (request, reply) => {
       const id = request.params.id;
       const payload = request.body;

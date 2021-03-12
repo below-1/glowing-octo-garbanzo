@@ -1,15 +1,16 @@
+import { wrap } from '@mikro-orm/core'
 import { EntityManager } from '@mikro-orm/postgresql'
-import { Category, Data } from '../entity/Category'
+import { Category } from '../entity/Category'
 import { DeleteInput } from './commons'
 
 type CreateInput = {
   em: EntityManager,
-  payload: Data
+  payload: Partial<Category>
 }
 
 type UpdateInput = {
   em: EntityManager,
-  payload: Data,
+  payload: Partial<Category>,
   id: number
 }
 
@@ -19,9 +20,7 @@ type FindOptions = {
 
 export async function create ({ em, payload } : CreateInput) {
   let category = new Category()
-  category.title = payload.title
-  category.content = payload.content
-  category.meta_title = payload.meta_title
+  wrap(category).assign(payload, { em })
   em.persist(category)
   await em.flush()
   return category
@@ -32,9 +31,7 @@ export async function update ({ em, payload, id } : UpdateInput) {
   if (!category) {
     throw new Error('NOT_FOUND')
   }
-  category.title = payload.title
-  category.meta_title = payload.meta_title
-  category.content = payload.content
+  wrap(category).assign(payload)
   em.persist(category)
   await em.flush()
   return category

@@ -20,8 +20,3 @@ export class Category {
 
 }
 
-export type Data = {
-    title: string;
-    meta_title?: string;
-    content?: string;
-}
