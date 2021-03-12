@@ -22,8 +22,9 @@ afterAll(async () => {
 
 describe("testing category API", () => {
 
+  const id = 230
+
   test("testing creation with provided ID", async () => {
-    const id = 230
     const response = await request(app.server)
       .post('/api/v1/category')
       .set('authorization', token)
