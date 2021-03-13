@@ -69,4 +69,43 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
+  fastify.get<{ Querystring: serv.PurchaseFilter }>('/', {
+    schema: {
+      querystring: {
+        type: 'object',
+        required: ['per_page', 'page'],
+        properties: {
+          date_filter: {
+            type: 'object',
+            properties: {
+              before: { type: 'string', format: 'date' },
+              after: { type: 'string', format: 'date' },
+            }
+          },
+          per_page: { type: 'integer' },
+          page: { type: 'integer' },
+          keyword: { type: 'string' }
+        }
+      }
+    },
+    handler: async (request, reply) => {
+      let opts: any = request.query;
+      if (opts.date_filter) {
+        opts.date_filter.before = new Date(opts.date_filter.before)
+        opts.date_filter.after = new Date(opts.date_filter.after)
+      }
+      try {
+        console.log('here')
+        const result = await serv.find_purchase({
+          em: request.em,
+          ...opts
+        })
+        reply.send(result)
+      } catch (err) {
+        console.log(err)
+        reply.status(500).send({ message: err.message })
+      }
+    }
+  })
+
 }

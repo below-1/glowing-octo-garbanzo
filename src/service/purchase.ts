@@ -7,7 +7,18 @@ import { User } from '../entity/User'
 import { Role } from '../entity/Role'
 import { Product } from '../entity/Product'
 import { Transaction, Status, Mode, Type } from '../entity/Transaction'
-import { DeleteInput } from './commons'
+import { DeleteInput, DateFilter } from './commons'
+
+export interface PurchaseFilter {
+  date_filter?: DateFilter;
+  per_page: number;
+  page: number;
+  keyword?: string;
+}
+
+export interface PurchaseFilterParams extends PurchaseFilter {
+  em: EntityManager;
+}
 
 export interface ProductItem {
   product_id: number;
@@ -106,4 +117,66 @@ export async function remove_purchase ({ em, id } : DeleteInput) {
   }
   em.remove(order);
   await em.flush();
+}
+
+export async function find_purchase (opts: PurchaseFilterParams) {
+  let result: any = [];
+  let qb = opts.em.createQueryBuilder(Order, "o")
+    .select('*')
+    .leftJoinAndSelect('o.user', 's');
+
+  if (opts.date_filter) {
+    qb = qb.where({
+      created_at: { 
+        $and: [
+          { $gte: opts.date_filter.before },
+          { $lte: opts.date_filter.after }
+        ]
+       }
+    })
+  }
+
+  if (opts.keyword) {
+    qb = qb.andWhere('s.first_name ilike ?', [`${opts.keyword}%`])
+  }
+
+  const em = opts.em;
+  const knex = em.getKnex();
+  const columns = [
+    "o.id", "o.status", "o.item_discount",
+    "o.tax", "o.shipping", "o.sub_total", "o.total", "o.grand_total",
+    "o.discount", "o.created_at", "o.content",
+    "s.id", "s.first_name"
+  ];
+  let qnex = knex.from("order as o")
+    .leftJoin("user as s", "s.id", "o.user_id")
+    .where("o.type", "=", 1)
+
+  if (opts.date_filter) {
+    qnex = qnex
+      .andWhere("o.created_at", ">=", opts.date_filter.after.toISOString())
+      .andWhere("o.created_at", "<=", opts.date_filter.before.toISOString())
+  }
+
+  if (opts.keyword) {
+    qnex = qnex
+      .andWhere("s.first_name", "ilike", `${opts.keyword}%`)
+  }
+
+  let qnex_count = qnex.clone()
+  const _total_data: any[] = await qnex_count.count()
+  const total_data = parseInt(_total_data[0]['count'])
+  const total_page = Math.ceil(total_data / opts.per_page)
+  const offset = opts.page * opts.per_page;
+  result.total_data = total_data;
+  result.total_page = total_page;
+
+  let items = await qb
+    .orderBy({ created_at: QueryOrder.DESC })
+    .limit(opts.per_page)
+    .offset(offset)
+    .getResultList();
+  await em.populate(items, ['user']);
+  result.items = items;
+  return result
 }

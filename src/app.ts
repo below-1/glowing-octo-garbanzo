@@ -1,5 +1,6 @@
 require('dotenv').config()
 
+import { types } from 'pg';
 import { join } from 'path'
 import { MikroORM } from '@mikro-orm/core'
 import { PostgreSqlDriver, EntityManager } from '@mikro-orm/postgresql';
@@ -25,6 +26,7 @@ declare module 'fastify' {
 
 export async function create_app () {
     const orm = await MikroORM.init<PostgreSqlDriver>(mikroOrmConfig as any);
+    types.setTypeParser(1700, str => str);
     const server = fastify({})
 
     server.addHook("onRequest", (request, reply, done) => {

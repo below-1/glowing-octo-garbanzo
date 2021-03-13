@@ -15,7 +15,7 @@ interface OrderItemInput {
   quantity: number;
 }
 
-interface SellData {
+export interface SellData {
   customer_id: number;
   tax?: number;
   created_at?: string;
@@ -26,7 +26,6 @@ interface SellData {
   items: OrderItemInput[];
   trans_status: Status;
   trans_mode?: Mode;
-  trans_nominal: number;
 }
 
 interface SellInput {
@@ -91,7 +90,7 @@ export async function new_sell({ em, payload, admin } : SellInput) {
   transaction.user = admin;
   transaction.status = payload.trans_status;
   transaction.created_at = payload.created_at ? new Date(payload.created_at) : new Date();
-  transaction.nominal = payload.trans_nominal;
+  transaction.nominal = order.grand_total;
 
   em.persist(transaction)
   em.persist(order)
