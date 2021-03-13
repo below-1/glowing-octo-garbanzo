@@ -12,5 +12,5 @@ export default {
     dbName: 'cend',
     type: 'postgresql',
     clientUrl: 'postgres://postgres@localhost:5432',
-    debug: false
+    debug: true
 }

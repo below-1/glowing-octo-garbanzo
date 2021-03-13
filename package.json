@@ -9,7 +9,8 @@
     "watch:ts": "pnpx tsc -w",
     "watch:app": "pnpx nodemon dist/index.js",
     "watch:e2e": "pnpx nodemon dist/e2e/index.js",
-    "dump_schema": "cd dist/ && pnpx mikro-orm schema:create --dump > ../database.sql"
+    "dump_schema": "cd dist/ && pnpx mikro-orm schema:create --dump > ../database.sql",
+    "mock_db": "node dist/e2e/mock.js"
   },
   "keywords": [],
   "author": "",

@@ -22,6 +22,7 @@ export interface FindOptions {
   keyword: string;
   page: number;
   per_page: number;
+  stock?: boolean;
 }
 
 export async function create ({ em, payload } : CreateInput) {
@@ -49,30 +50,52 @@ export async function remove ({ em, id } : DeleteInput) {
   await em.removeAndFlush(em.getReference(Product, id))
 }
 
-export async function find ({ em, page, keyword, per_page } : FindOptions) {
-  let count_query_string = `select count(*) as total from product p`;
-  let qb = em.createQueryBuilder(Product, 'p');
-
-  let total_page = null;
-  let offset = null;
+export async function find ({ em, page, keyword, per_page, stock } : FindOptions) {
+  const knex = em.getKnex();
+  let qnex = knex.from('product as p');
+  let columns = [
+    'p.id', 'p.title', 'p.summary', 'p.content',
+    knex.raw(`jsonb_agg(c) as categories`)
+  ];
 
   if (keyword) {
-    count_query_string += `and p.title ilike '${keyword}%'`
-    qb = qb.where(`p.title ilike '${keyword}%'`)
-    const [ count_res ] = await em.execute(count_query_string)
-    const { total } = count_res
-    total_page = Math.ceil(total / per_page)
-    offset = page * per_page;
+    qnex = qnex.andWhere('p.title', 'ilike', "'${keyword}%'")
   }
 
-  if (total_page && offset) {
-    qb = qb.orderBy({ title: QueryOrder.ASC })
-      .limit(per_page, per_page * page)
+  // counting 
+  let qnex_count = qnex.clone()
+  const _total_data: any[] = await qnex_count.count()
+  console.log(_total_data)
+  const total_data = parseInt(_total_data[0]['count'])
+  const total_page = Math.ceil(total_data / per_page)
+  const offset = page * per_page;
+
+  // Joining
+  qnex = qnex
+    .leftJoin('product_categories as pc', 'pc.product_id', 'p.id')
+    .leftJoin('category as c', 'pc.category_id', 'c.id');
+
+  // append grouping
+  qnex = qnex.orderBy('p.title', 'asc')
+            .groupBy('p.id');
+
+  if (stock) {
+    qnex = qnex.leftJoin('item', 'p.id', 'item.product_id');
+    columns = [
+      ...columns,
+      knex.raw(`sum(item.available) as stok_tersedia`),
+      knex.raw(`sum(item.sold) stok_terjual`),
+      knex.raw(`sum(item.defective) stok_rusak`)
+    ]
   }
 
-  const items = await qb.getResultList()
+  console.log(`total_page = ${total_page}`)
+  if (total_page) {
+    qnex = qnex.limit(per_page).offset(offset);
+  }
 
-  await em.populate(items, ['categories'])
+  const items = await qnex.select(columns)
+  // console.log(qnex.select(columns).toSQL())
 
   return {
     items,

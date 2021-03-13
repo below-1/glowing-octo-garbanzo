@@ -3,13 +3,13 @@ import request from 'supertest'
 import { setup } from './setup'
 
 const FAKE_CATEGORIES = [
-  { id: 1, title: 'A', meta_title: 'foobar' },
-  { id: 2, title: 'B', meta_title: 'foobar' },
-  { id: 3, title: 'C', meta_title: 'foobar' }
+  { id: 140, title: 'A', meta_title: 'foobar' },
+  { id: 141, title: 'B', meta_title: 'foobar' },
+  { id: 141, title: 'C', meta_title: 'foobar' }
 ]
 
 
-describe("Product API", () => {
+describe("product POST with provided ID", () => {
 
   var token: string;
   var app: FastifyInstance;
@@ -19,9 +19,6 @@ describe("Product API", () => {
     const setup_result = await setup()
     token = setup_result.token;
     app = setup_result.app;
-    // await app.ready()
-    // app.blipp();
-    // Add Categories
     await Promise.all( FAKE_CATEGORIES.map(cat => cat.id)
       .map(async (id) => {
         return request(app.server)
@@ -50,7 +47,7 @@ describe("Product API", () => {
     await app.close();
   })
 
-  test("POST with provided ID", async () => {
+  test("test", async () => {
     const response = await request(app.server)
       .post('/api/v1/product')
       .set('authorization', token)
@@ -64,3 +61,4 @@ describe("Product API", () => {
   })
 
 })
+

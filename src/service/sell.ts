@@ -48,7 +48,7 @@ export async function new_sell({ em, payload, admin } : SellInput) {
   order.created_at = payload.created_at ? new Date(payload.created_at) : new Date();
 
   let order_items: OrderItem[] = []
-  payload.items.forEach(async it => {
+  for (let it of payload.items) {
     let order_item = new OrderItem()
     let item = await em.findOne(Item, it.item_id)
     if (!item) {
@@ -72,9 +72,17 @@ export async function new_sell({ em, payload, admin } : SellInput) {
 
     em.persist(order_item)
     em.persist(item)
-  })
-  const item_discount = order_items.map(it => it.discount *  it.price).reduce((a, b) => a + b, 0)
-  order.item_discount = item_discount
+  }
+  order.sub_total = order_items.map(it => it.price).reduce((a, b) => a + b, 0)
+  const tot_ship = order.sub_total + order.shipping
+  const tot_ship_tax = (tot_ship * order.tax)
+  order.total = tot_ship + tot_ship_tax
+  order.item_discount = order_items.map(it => it.discount *  it.price).reduce((a, b) => a + b, 0)
+  const t1_gt = order_items.map(it => it.price - (it.price * it.discount)).reduce((a, b) => a + b, 0)
+  const t2_gt = t1_gt + order.shipping
+  const t3_gt = t1_gt - (t1_gt * order.discount)
+  const t4_gt = t3_gt + (t3_gt * order.tax)
+  order.grand_total = t4_gt
 
   let transaction = new Transaction()
   transaction.order = order
