@@ -21,7 +21,7 @@ export interface FindOptions {
   em: EntityManager;
   keyword: string;
   page: number;
-  per_page: number;
+  per_page?: number;
   stock?: boolean;
 }
 
@@ -51,6 +51,7 @@ export async function remove ({ em, id } : DeleteInput) {
 }
 
 export async function find ({ em, page, keyword, per_page, stock } : FindOptions) {
+  let result: any = {}
   const knex = em.getKnex();
   let qnex = knex.from('product as p');
   let columns = [
@@ -59,16 +60,21 @@ export async function find ({ em, page, keyword, per_page, stock } : FindOptions
   ];
 
   if (keyword) {
-    qnex = qnex.andWhere('p.title', 'ilike', "'${keyword}%'")
+    qnex = qnex.andWhere('p.title', 'ilike', `${keyword}%`)
   }
 
   // counting 
-  let qnex_count = qnex.clone()
-  const _total_data: any[] = await qnex_count.count()
-  console.log(_total_data)
-  const total_data = parseInt(_total_data[0]['count'])
-  const total_page = Math.ceil(total_data / per_page)
-  const offset = page * per_page;
+  let total_page: number;
+  let offset: number;
+  let total_data: number;
+  if (per_page) {
+    let qnex_count = qnex.clone()
+    const _total_data: any[] = await qnex_count.count()
+    total_data = parseInt(_total_data[0]['count'])
+    total_page = Math.ceil(total_data / per_page)
+    offset = page * per_page;
+    result.total_data = total_data;
+  }
 
   // Joining
   qnex = qnex
@@ -89,16 +95,12 @@ export async function find ({ em, page, keyword, per_page, stock } : FindOptions
     ]
   }
 
-  console.log(`total_page = ${total_page}`)
-  if (total_page) {
-    qnex = qnex.limit(per_page).offset(offset);
+  if (per_page) {
+    qnex = qnex.limit(per_page).offset(offset!);
+    result.total_page = total_page!;
   }
 
-  const items = await qnex.select(columns)
   // console.log(qnex.select(columns).toSQL())
-
-  return {
-    items,
-    total_page
-  }
+  result.items = await qnex.select(columns)
+  return result;
 }

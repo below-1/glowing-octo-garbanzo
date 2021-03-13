@@ -18,7 +18,7 @@ interface FindOptions {
   role: Role;
   keyword: string;
   page: number;
-  per_page: number;
+  per_page?: number;
 }
 
 export async function create ({ em, payload } : CreateInput) {
@@ -45,35 +45,29 @@ export async function remove ({ em, id } : DeleteInput) {
 }
 
 export async function find ({ em, role, keyword, per_page, page } : FindOptions) {
-  let count_query_string = `
-    select count(*) as total from "user" as u 
-      where u."role" = '${role}'
-  `
-  let items_query_string = `
-    select u.* from "user" as u 
-      where u."role" = '${role}'
-  `
-
-  let total_page = undefined
-  let offset = undefined
+  let result: any = {}
+  const knex = em.getKnex()
+  let qnex = knex.from("user as u").where({ "u.role": role})
 
   if (keyword) {
-    count_query_string += `and u.first_name ilike '${keyword}%'`
-    items_query_string += `and u.first_name ilike '${keyword}%'`
-    const [ count_res ] = await em.execute(count_query_string)
-    const { total } = count_res
-    total_page = Math.ceil(total / per_page)
-    offset = page * per_page;
+    qnex = qnex.andWhere('u.first_name', 'ilike', `${keyword}%`)
   }
 
-  if (total_page && offset) {
-    items_query_string += `order by u.first_name limit ${per_page} offset ${offset}`
+  let total_page: number;
+  let offset: number;
+  let total_data: number;
+  if (per_page) {
+    let qnex_count = qnex.clone()
+    const _total_data: any[] = await qnex_count.count()
+    total_data = parseInt(_total_data[0]['count'])
+    total_page = Math.ceil(total_data / per_page)
+    const real_page = page ? page : 0;
+    offset = real_page * per_page;
+    qnex = qnex.limit(per_page).offset(offset);
+    result.total_page = total_page;
+    result.total_data = total_data;
   }
 
-
-  const items = await em.execute(items_query_string)
-  return {
-    total_page,
-    items
-  }
+  result.items = await qnex.select();
+  return result;
 }

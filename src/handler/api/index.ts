@@ -9,12 +9,13 @@ import purchase_handler from './purchase'
 export default async (fastify: FastifyInstance) => {
 
     fastify.addHook('preHandler', async (request, reply) => {
-        const token = request.headers.authorization as string
-        if (!token) {
+        const auth = request.headers.authorization as string
+        if (!auth) {
             reply.status(400).send({ message: 'no token in headers' })
             return
         }
         try {
+            const token = auth.split(' ')[1]
             const user = await check_auth({ em: request.em, token })
             request.user = user
         } catch (err) {
