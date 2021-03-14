@@ -10,6 +10,9 @@ export class AccountsReceivable {
   @ManyToOne()
   order: Order;
 
+  @ManyToOne()
+  admin: User;
+
   @Property()
   created_at: Date = new Date();
 
