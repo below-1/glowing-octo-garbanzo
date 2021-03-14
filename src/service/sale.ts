@@ -1,5 +1,6 @@
 import { QueryOrder } from '@mikro-orm/core'
 import { EntityManager } from '@mikro-orm/postgresql'
+import BigNumber from 'big.js'
 import { Order, Status as OrderStatus } from '../entity/Order'
 import { OrderItem } from '../entity/OrderItem'
 import { Item } from '../entity/Item'
@@ -17,11 +18,11 @@ interface OrderItemInput {
 
 export interface SellData {
   customer_id: number;
-  tax?: number;
+  tax?: string;
   created_at?: string;
   content?: string;
-  shipping?: number;
-  discount?: number;
+  shipping?: string;
+  discount?: string;
   status: OrderStatus;
   items: OrderItemInput[];
   trans_status: Status;
@@ -41,9 +42,9 @@ export async function new_sell({ em, payload, admin } : SellInput) {
   order.user = customer
   order.type = 2
   order.status = payload.status
-  order.shipping = payload.shipping ? payload.shipping : 0;
-  order.tax = payload.tax ? payload.tax : 0;
-  order.discount = payload.discount ? payload.discount : 0;
+  order.shipping = payload.shipping ? payload.shipping : '0';
+  order.tax = payload.tax ? payload.tax : '0';
+  order.discount = payload.discount ? payload.discount : '0';
   order.created_at = payload.created_at ? new Date(payload.created_at) : new Date();
 
   let order_items: OrderItem[] = []
@@ -72,16 +73,39 @@ export async function new_sell({ em, payload, admin } : SellInput) {
     em.persist(order_item)
     em.persist(item)
   }
-  order.sub_total = order_items.map(it => it.price).reduce((a, b) => a + b, 0)
-  const tot_ship = order.sub_total + order.shipping
-  const tot_ship_tax = (tot_ship * order.tax)
-  order.total = tot_ship + tot_ship_tax
-  order.item_discount = order_items.map(it => it.discount *  it.price).reduce((a, b) => a + b, 0)
-  const t1_gt = order_items.map(it => it.price - (it.price * it.discount)).reduce((a, b) => a + b, 0)
-  const t2_gt = t1_gt + order.shipping
-  const t3_gt = t1_gt - (t1_gt * order.discount)
-  const t4_gt = t3_gt + (t3_gt * order.tax)
-  order.grand_total = t4_gt
+
+  const shipping = new BigNumber(order.shipping)
+  const tax = new BigNumber(order.tax)
+  const discount = new BigNumber(order.discount)
+  const items_agg = order_items
+    .map(it => {
+      const price = new BigNumber(it.price)
+      const discount = new BigNumber(it.discount)
+      const quantity = it.quantity
+      return {
+        original: price.mul(quantity),
+        discount: price.mul(quantity).sub(price.mul(quantity).mul(discount))
+      }
+    })
+  const sub_total = items_agg
+    .map(it => it.original)
+    .reduce((a, b) => a.plus(b), new BigNumber(0))
+
+  const tot_ship = sub_total.plus(shipping)
+  const tot_ship_tax = tot_ship.mul(tax);
+  const total = tot_ship.plus(tot_ship_tax);
+  const item_discount = items_agg
+    .map(it => it.discount)
+    .reduce((a, b) => a.plus(b), new BigNumber('0'));
+
+  const t2_gt = item_discount.plus(shipping)
+  const t3_gt = t2_gt.sub(t2_gt.mul(discount));
+  const t4_gt = t3_gt.plus(t3_gt.mul(tax))
+
+  order.item_discount = item_discount.toFixed(4).toString();
+  order.sub_total = sub_total.toFixed(4).toString();
+  order.total = total.toFixed(4).toString();
+  order.grand_total = t4_gt.toFixed(4).toString();
 
   let transaction = new Transaction()
   transaction.order = order
@@ -110,7 +134,7 @@ export async function remove_sell ({ em, id } : DeleteInput) {
   // find all order_item for this order
   // and restore stock
   let order_items = await em.createQueryBuilder(OrderItem, 'oi')
-    .join('oi.item', 'i')
+    .joinAndSelect('oi.item', 'i')
     .where({'oi.order_id': id})
     .getResultList();
   order_items.forEach(oi => {

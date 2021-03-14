@@ -76,7 +76,7 @@ async function main() {
     .map(async (payload) => {
       return api.post('/api/v1/category', payload, {
         headers: {
-          authorization: token
+          authorization: `Bearer ${token}`
         }
       })
     })
@@ -96,7 +96,7 @@ async function main() {
       url: '/api/v1/product',
       data: payload,
       headers: {
-        authorization: token
+        authorization: `Bearer ${token}`
       }
     }))
 
@@ -117,7 +117,7 @@ async function main() {
       url: '/api/v1/supplier',
       data,
       headers: {
-        authorization: token
+        authorization: `Bearer ${token}`
       }
     }))
   const supplier_responses = await Promise.all(supplier_responses_proms)
@@ -137,60 +137,60 @@ async function main() {
       url: '/api/v1/customer',
       data,
       headers: {
-        authorization: token
+        authorization: `Bearer ${token}`
       }
     }))
   const customer_responses = await Promise.all(customer_responses_proms)
   const customers = customer_responses.map(resp => resp.data)
   const customers_ids = customers.map(customer => customer.id)
 
-  const purchase_responses_proms = range(N_PURCHASE)
-    .map(i => {
-      const N_ITEMS = chance.natural({ min: 5, max: 10 })
-      const product_ids = chance.pickset(products_ids, N_ITEMS)
-      let items = product_ids
-        .map(pid => {
-          let price = chance.natural({ min: 24, max: 100 }) * 1000
-          let quantity = chance.natural({ min: 1, max: 4 }) * 100
-          let item_data = {
-            product_id: pid,
-            discount: chance.pickone([0, 0.1, 0.2]),
-            price,
-            sale_price: price + (chance.natural({ min: 1, max: 5 }) * 1000),
-            quantity,
-            available: quantity,
-            defective: 0
-          }
-          return item_data
-        })
-      let purchase_data = {
-        supplier_id: chance.pickone(suppliers_ids),
-        // tax: chance.pickone([0, 0.1, 0.05]),
-        tax: 0,
-        created_at: (chance.date({ year: 2020 }) as Date).toISOString(),
-        content: chance.sentence({ words: 12 }),
-        discount: chance.pickone([0, 0.1, 0.2]),
-        status: 'CHECKOUT',
-        trans_status: 'SUCCESS',
-        trans_mode: 'ONLINE',
-        items
-      }
-      return api({
-        method: 'post',
-        url: '/api/v1/purchase',
-        data: purchase_data,
-        headers: {
-          authorization: token
-        }
-      })
-    })
-  try {
-    const purchase_responses = await Promise.all(purchase_responses_proms)
-    const purchases = purchase_responses.map(resp => resp.data)
-    console.log(purchases)
-  } catch (err) {
-    console.log(err)
-  }
+  // const purchase_responses_proms = range(N_PURCHASE)
+  //   .map(i => {
+  //     const N_ITEMS = chance.natural({ min: 5, max: 10 })
+  //     const product_ids = chance.pickset(products_ids, N_ITEMS)
+  //     let items = product_ids
+  //       .map(pid => {
+  //         let price = chance.natural({ min: 24, max: 100 }) * 1000
+  //         let quantity = chance.natural({ min: 1, max: 4 }) * 100
+  //         let item_data = {
+  //           product_id: pid,
+  //           discount: `${chance.pickone([0, 0.1, 0.2])}`,
+  //           price: `${price}`,
+  //           sale_price: `${price + (chance.natural({ min: 1, max: 5 }) * 1000)}`,
+  //           quantity,
+  //           available: quantity,
+  //           defective: 0
+  //         }
+  //         return item_data
+  //       })
+  //     let purchase_data = {
+  //       supplier_id: chance.pickone(suppliers_ids),
+  //       // tax: chance.pickone([0, 0.1, 0.05]),
+  //       tax: '0',
+  //       created_at: (chance.date({ year: 2020 }) as Date).toISOString(),
+  //       content: chance.sentence({ words: 12 }),
+  //       discount: `${chance.pickone([0, 0.1, 0.2])}`,
+  //       status: 'CHECKOUT',
+  //       trans_status: 'SUCCESS',
+  //       trans_mode: 'ONLINE',
+  //       items
+  //     }
+  //     return api({
+  //       method: 'post',
+  //       url: '/api/v1/purchase',
+  //       data: purchase_data,
+  //       headers: {
+  //         authorization: `Bearer ${token}`
+  //       }
+  //     })
+  //   })
+  // try {
+  //   const purchase_responses = await Promise.all(purchase_responses_proms)
+  //   const purchases = purchase_responses.map(resp => resp.data)
+  //   console.log(purchases)
+  // } catch (err) {
+  //   console.log(err)
+  // }
 
   await app.close()
 }

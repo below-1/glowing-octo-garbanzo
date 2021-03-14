@@ -1,5 +1,6 @@
 import { QueryOrder } from '@mikro-orm/core'
 import { EntityManager } from '@mikro-orm/postgresql'
+import BigNumber from 'big.js'
 import { Order, Status as OrderStatus } from '../entity/Order'
 import { OrderItem } from '../entity/OrderItem'
 import { Item } from '../entity/Item'
@@ -23,9 +24,9 @@ export interface PurchaseFilterParams extends PurchaseFilter {
 export interface ProductItem {
   product_id: number;
   sku?: string;
-  discount?: number;
-  price: number;
-  sale_price: number;
+  discount?: string;
+  price: string;
+  sale_price: string;
   quantity: number;
   available: number;
   defective: number;
@@ -33,11 +34,11 @@ export interface ProductItem {
 
 export interface BuyData {
   supplier_id: number;
-  tax?: number;
+  tax?: string;
   created_at?: string;
   content?: string;
-  shipping?: number;
-  discount?: number;
+  shipping?: string;
+  discount?: string;
   status: OrderStatus;
   items: ProductItem[];
   trans_status: Status;
@@ -57,9 +58,9 @@ export async function new_purchase ({ em, payload, admin } : BuyInput) {
   order.user = supplier
   order.type = 1
   order.status = payload.status
-  order.shipping = payload.shipping ? payload.shipping : 0;
-  order.tax = payload.tax ? payload.tax : 0;
-  order.discount = payload.discount ? payload.discount : 0;
+  order.shipping = payload.shipping ? payload.shipping : '0';
+  order.tax = payload.tax ? payload.tax : '0';
+  order.discount = payload.discount ? payload.discount : '0';
   order.created_at = payload.created_at ? new Date(payload.created_at) : new Date();
 
   let items: Item[] = []
@@ -70,7 +71,7 @@ export async function new_purchase ({ em, payload, admin } : BuyInput) {
     item.supplier = supplier
     item.order = order
     item.sku = it.sku;
-    item.discount = it.discount ? it.discount : 0;
+    item.discount = it.discount ? it.discount : '0';
     item.price = it.price;
     item.sale_price = it.sale_price;
     item.sold = 0;
@@ -81,16 +82,38 @@ export async function new_purchase ({ em, payload, admin } : BuyInput) {
     items.push(item)
     em.persist(item)
   }
-  order.sub_total = items.map(it => it.price).reduce((a, b) => a + b, 0)
-  const tot_ship = order.sub_total + order.shipping
-  const tot_ship_tax = (tot_ship * order.tax)
-  order.total = tot_ship + tot_ship_tax
-  order.item_discount = items.map(it => it.discount *  it.price).reduce((a, b) => a + b, 0)
-  const t1_gt = items.map(it => it.price - (it.price * it.discount)).reduce((a, b) => a + b, 0)
-  const t2_gt = t1_gt + order.shipping
-  const t3_gt = t1_gt - (t1_gt * order.discount)
-  const t4_gt = t3_gt + (t3_gt * order.tax)
-  order.grand_total = t4_gt
+  const shipping = new BigNumber(order.shipping)
+  const tax = new BigNumber(order.tax)
+  const discount = new BigNumber(order.discount)
+  const items_agg = items
+    .map(it => {
+      const price = new BigNumber(it.price)
+      const discount = new BigNumber(it.discount)
+      const quantity = it.quantity
+      return {
+        original: price.mul(quantity),
+        discount: price.mul(quantity).sub(price.mul(quantity).mul(discount))
+      }
+    })
+  const sub_total = items_agg
+    .map(it => it.original)
+    .reduce((a, b) => a.plus(b), new BigNumber(0))
+
+  const tot_ship = sub_total.plus(shipping)
+  const tot_ship_tax = tot_ship.mul(tax);
+  const total = tot_ship.plus(tot_ship_tax);
+  const item_discount = items_agg
+    .map(it => it.discount)
+    .reduce((a, b) => a.plus(b), new BigNumber('0'));
+
+  const t2_gt = item_discount.plus(shipping)
+  const t3_gt = t2_gt.sub(t2_gt.mul(discount));
+  const t4_gt = t3_gt.plus(t3_gt.mul(tax))
+
+  order.item_discount = item_discount.toFixed(4).toString();
+  order.sub_total = sub_total.toFixed(4).toString();
+  order.total = total.toFixed(4).toString();
+  order.grand_total = t4_gt.toFixed(4).toString();
 
   let transaction = new Transaction()
   transaction.order = order
@@ -120,7 +143,7 @@ export async function remove_purchase ({ em, id } : DeleteInput) {
 }
 
 export async function find_purchase (opts: PurchaseFilterParams) {
-  let result: any = [];
+  let result: any = {};
   let qb = opts.em.createQueryBuilder(Order, "o")
     .select('*')
     .leftJoinAndSelect('o.user', 's');
@@ -179,4 +202,23 @@ export async function find_purchase (opts: PurchaseFilterParams) {
   await em.populate(items, ['user']);
   result.items = items;
   return result
+}
+
+export async function find_purchase_by_id ({ em, id } : { em: EntityManager, id: number }) {
+  const order: Order = (await em.findOne(Order, id, ['user'])) as Order;
+  const item_repo = em.getRepository(Item);
+  const items = await em.find(Item, 
+    {
+      order: {
+        id: order.id
+      },
+    },
+    {
+      populate: ['product']
+    }
+  )
+  return {
+    order,
+    items
+  }
 }

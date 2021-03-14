@@ -6,18 +6,18 @@ import { Product } from '../../entity/Product'
 
 export default async (fastify: FastifyInstance) => {
 
-  fastify.post<{ Body: serv.BuyData }>('/', {
+  fastify.post<{ Body: any }>('/', {
     schema: {
       body: {
         type: 'object',
         properties: {
           supplier_id: { type: 'integer' },
-          tax: { type: 'number', default: 0 },
+          tax: { type: 'integer', default: 0, min: 0, max: 100 },
           created_at: { type: 'string', format: 'date-time' },
           content: { type: 'string' },
           status: { type: 'string', enum: ['NEW', 'CHECKOUT', 'PAID', 'FAILED', 'SHIPPED', 'DELIVERED', 'RETURNED', 'COMPLETE'] },
-          shipping: { type: 'number', default: 0 },
-          discount: { type: 'number', default: 0 },
+          shipping: { type: 'integer', default: 0, min: 0, max: 100 },
+          discount: { type: 'integer', default: 0, min: 0, max: 100 },
           trans_status: { type: 'string', enum: ['NEW', 'CANCELLED', 'FAILED', 'PENDING', 'DECLINED', 'REJECTED', 'SUCCESS'] },
           trans_mode: { type: 'string', enum: ['OFFLINE', 'CASH', 'ON_DELIVERY', 'CHEQUE_DRAFT', 'WIRED', 'ONLINE'] },
           items: {
@@ -27,9 +27,10 @@ export default async (fastify: FastifyInstance) => {
               properties: {
                 product_id: { type: 'integer' },
                 sku: { type: 'string' },
-                mrp: { type: 'number' },
-                discount: { type: 'number', default: 0 },
-                price: { type: 'number' },
+                sale_price: { type: 'number' },
+                discount: { type: 'integer', default: 0, min: 0, max: 100 },
+                price: { type: 'number', min: 0 },
+                quantity: { type: 'integer' },
                 available: { type: 'integer' },
                 defected: { type: 'integer' }
               }
@@ -39,7 +40,18 @@ export default async (fastify: FastifyInstance) => {
       }
     },
     handler: async (request, reply) => {
-      const payload = request.body
+      let payload = request.body
+      payload.tax = `${payload.tax * 0.01}`
+      payload.discount = `${payload.discount * 0.01}`
+      payload.shipping = `${payload.shipping * 0.01}`
+      payload.items = payload.items.map((it: any) => {
+        return {
+          ...it,
+          discount: `${it.discount * 0.01}`,
+          price: `${it.price}`,
+          sale_price: `${it.sale_price}`,
+        }
+      })
       try {
         const order = await serv.new_purchase({
           em: request.em,
@@ -100,11 +112,22 @@ export default async (fastify: FastifyInstance) => {
           em: request.em,
           ...opts
         })
+        console.log('displaying result')
         reply.send(result)
       } catch (err) {
         console.log(err)
         reply.status(500).send({ message: err.message })
       }
+    }
+  })
+
+  fastify.get<{ Params: ID }>('/:id', {
+    handler: async (request, reply) => {
+      const order = await serv.find_purchase_by_id({
+        em: request.em,
+        id: request.params.id
+      })
+      reply.send(order)
     }
   })
 

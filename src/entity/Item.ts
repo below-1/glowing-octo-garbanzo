@@ -11,10 +11,10 @@ export class Item {
     @ManyToOne()
     created_by: User;
 
-    @ManyToOne({ onDelete: 'cascade' })
+    @ManyToOne({ onDelete: 'cascade', eager: false })
     supplier!: User;
 
-    @ManyToOne({ onDelete: 'cascade' })
+    @ManyToOne({ onDelete: 'cascade', eager: false })
     order!: Order;
 
     @ManyToOne()
@@ -24,13 +24,13 @@ export class Item {
     sku?: string;
 
     @Property({ columnType: 'numeric(17, 4)' })
-    discount!: number;
+    discount!: string;
 
     @Property({ columnType: 'numeric(17, 4)' })
-    sale_price!: number;
+    sale_price!: string;
 
     @Property({ columnType: 'numeric(17, 4)' })
-    price!: number;
+    price!: string;
 
     @Property({ columnType: 'integer' })
     quantity!: number;

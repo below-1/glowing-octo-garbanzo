@@ -12,11 +12,11 @@ export default async (fastify: FastifyInstance) => {
         type: 'object',
         properties: {
           customer_id: { type: 'integer' },
-          tax: { type: 'number' },
+          tax: { type: 'string' },
           created_at: { type: 'string', format: 'date-time' },
           content: { type: 'string' },
-          discount: { type: 'number' },
-          shipping: { type: 'number' },
+          discount: { type: 'string' },
+          shipping: { type: 'string' },
           status: { type: 'string', enum: ['NEW', 'CHECKOUT', 'PAID', 'FAILED', 'SHIPPED', 'DELIVERED', 'RETURNED', 'COMPLETE'] },
           trans_status: { type: 'string', enum: ['NEW', 'CANCELLED', 'FAILED', 'PENDING', 'DECLINED', 'REJECTED', 'SUCCESS'] },
           trans_mode: { type: 'string', enum: ['OFFLINE', 'CASH', 'ON_DELIVERY', 'CHEQUE_DRAFT', 'WIRED', 'ONLINE'] },
@@ -35,9 +35,13 @@ export default async (fastify: FastifyInstance) => {
       }
     },
     handler: async (request, reply) => {
-      reply.status(500).send({
-        message: 'not_implemented'
+      const user = request.user;
+      const result = await serv.new_sell({
+        em: request.em,
+        payload: request.body,
+        admin: user
       })
+      reply.send(result)
     }
   })
 

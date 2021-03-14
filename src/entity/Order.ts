@@ -25,28 +25,28 @@ export class Order {
     status: Status;
 
     @Property({columnType: 'numeric(17, 4)'})
-    item_discount: number = 0;
+    item_discount: string;
 
     @Property({columnType: 'numeric(17, 4)'})
-    tax: number = 0;
+    tax: string;
 
     @Property({columnType: 'numeric(17, 4)'})
-    shipping: number = 0;
+    shipping: string;
 
     @Property({columnType: 'numeric(17, 4)'})
-    sub_total!: number;
+    sub_total!: string;
 
     @Property({columnType: 'numeric(17, 4)'})
-    total!: number;
+    total!: string;
 
     @Property({columnType: 'numeric(17, 4)'})
-    grand_total: number;
+    grand_total: string;
 
     @Property({ nullable: true })
     promo?: string;
 
     @Property({columnType: 'numeric(17, 4)'})
-    discount: number;
+    discount: string;
 
     @Property()
     created_at: Date = new Date();

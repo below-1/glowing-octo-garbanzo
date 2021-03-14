@@ -83,4 +83,21 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
+  fastify.get<{ Params: ID }>('/:id', {
+    handler: async (request, reply) => {
+      const { id } = request.params;
+      const query = request.query as any;
+      const stock = query.stock ? query.stock : false;
+      try {
+        const result = await serv.findOne({ em: request.em, id, stock  })
+        reply.send(result)
+      } catch (err) {
+        console.log(err)
+        reply.status(500).send({
+          message: err.message
+        })
+      }
+    }
+  })
+
 }

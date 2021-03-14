@@ -39,7 +39,7 @@ export class Transaction {
     order!: Order;
 
     @Property({ columnType: 'numeric(17, 4)' })
-    nominal: number;
+    nominal: string;
 
     @Property()
     code: string = randomBytes(20).toString('hex');

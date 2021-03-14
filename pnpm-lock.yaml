@@ -1,6 +1,7 @@
 dependencies:
   '@mikro-orm/core': 4.4.4_@mikro-orm+postgresql@4.4.4
   '@mikro-orm/postgresql': 4.4.4_@mikro-orm+core@4.4.4
+  '@types/big.js': 6.0.2
   bcrypt: 5.0.1
   big.js: 6.0.3
   date-fns: 2.18.0
@@ -863,6 +864,10 @@ packages:
     dev: true
     resolution:
       integrity: sha512-nohgNyv+1ViVcubKBh0+XiNJ3dO8nYu///9aJ4cgSqv70gBL+94SNy/iC2NLzKPT2Zt/QavrOkBVbZRLZmw6NQ==
+  /@types/big.js/6.0.2:
+    dev: false
+    resolution:
+      integrity: sha512-7NdmOT3zjtghMofDwP1nAJCJWVjc/96V5msXRAZ4lPrvpGlajA95VQec7OXwA2wQaVmhjt+F5ko8pjvQU1tTFA==
   /@types/bluebird/3.5.33:
     dev: true
     resolution:
@@ -6200,6 +6205,7 @@ specifiers:
   '@mikro-orm/core': ^4.4.4
   '@mikro-orm/postgresql': ^4.4.4
   '@types/bcrypt': ^3.0.0
+  '@types/big.js': ^6.0.2
   '@types/chance': ^1.1.1
   '@types/jest': ^26.0.20
   '@types/node': ^14.14.31

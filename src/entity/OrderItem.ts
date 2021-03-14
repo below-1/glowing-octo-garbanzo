@@ -21,10 +21,10 @@ export class OrderItem {
     sku?: string;
 
     @Property({ columnType: 'numeric(17, 4)' })
-    price: number;
+    price: string;
 
     @Property({ columnType: 'numeric(17, 4)' })
-    discount: number = 0.0;
+    discount: string;
 
     @Property({ columnType: 'integer' })
     quantity: number;
