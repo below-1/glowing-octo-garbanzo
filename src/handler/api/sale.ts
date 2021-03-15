@@ -3,6 +3,10 @@ import * as fastify from 'fastify';
 import * as serv from '../../service/sale'
 import { ID } from './commons'
 import { Product } from '../../entity/Product'
+import { Order } from '../../entity/Order'
+import { Transaction } from '../../entity/Transaction'
+import { AccountsReceivable as AR } from '../../entity/AccountsReceivable'
+import BigNumber from 'big.js'
 
 export default async (fastify: FastifyInstance) => {
 
@@ -41,6 +45,36 @@ export default async (fastify: FastifyInstance) => {
         payload: request.body,
         admin: user
       })
+      reply.send(result)
+    }
+  })
+
+  fastify.get<{ Params: ID }>('/:id', {
+    handler: async (request, reply) => {
+      const em = request.em;
+      const id = request.params.id;
+      let result: any = {}
+      const order = await em.findOne(Order, id)
+      if (!order) {
+        reply.status(404).send({ message: 'NOT_FOUND' })
+        return;
+      }
+      result.order = order;
+      if (order.type != 2) {
+        reply.status(500).send({ message: `Order(id=${id}) is not sale` })
+        return;
+      }
+      const transaction = await em.findOne(Transaction, { order })
+      if (!transaction) {
+        reply.status(500).send({ message: `Can't find transaction of Order(id=${id})` })
+        return;
+      }
+      result.transaction = transaction;
+      const nominal = new BigNumber(transaction.nominal)
+      const grand_total = new BigNumber(order.grand_total)
+      if (grand_total.gt(nominal)) {
+        result.ar = await em.findOne(AR, { order }, ['payments'])
+      }
       reply.send(result)
     }
   })

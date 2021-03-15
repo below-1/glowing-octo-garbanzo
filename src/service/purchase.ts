@@ -43,7 +43,6 @@ export interface BuyData {
   items: ProductItem[];
   trans_status: Status;
   trans_mode?: Mode;
-  trans_nominal: string;
 }
 
 export interface BuyInput {
@@ -123,7 +122,7 @@ export async function new_purchase ({ em, payload, admin } : BuyInput) {
   transaction.user = admin;
   transaction.status = payload.trans_status;
   transaction.created_at = payload.created_at ? new Date(payload.created_at) : new Date();
-  transaction.nominal = payload.trans_nominal;
+  transaction.nominal = order.grand_total;
 
   em.persist(transaction)
   em.persist(order)

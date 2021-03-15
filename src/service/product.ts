@@ -131,24 +131,43 @@ export async function find ({ em, page, keyword, per_page, stock } : FindOptions
 
 export async function findOne ({ em, stock, id } : { em: EntityManager, stock: boolean, id: number }) {
   const knex = em.getKnex();
+  let result: any = {}
   let qnex = knex.from('product as p')
     .leftJoin('product_categories as pc', 'pc.product_id', 'p.id')
-    .leftJoin('category as c', 'pc.category_id', 'c.id');
+    .leftJoin('category as c', 'pc.category_id', 'c.id')
+
   let columns = [
     'p.id', 'p.title', 'p.summary', 'p.content',
     knex.raw(`jsonb_agg(c) as categories`)
   ];
 
   if (stock) {
-    qnex = qnex.leftJoin('item', 'p.id', 'item.product_id');
+    qnex = qnex
+      .leftJoin('item as it', 'p.id', 'it.product_id')
     columns = [
       ...columns,
-      knex.raw(`sum(distinct item.available) as stok_tersedia`),
-      knex.raw(`sum(distinct item.sold) stok_terjual`),
-      knex.raw(`sum(distinct item.defective) stok_rusak`)
+      knex.raw(`sum(distinct it.available) as stok_tersedia`),
+      knex.raw(`sum(distinct it.sold) stok_terjual`),
+      knex.raw(`sum(distinct it.defective) stok_rusak`)
     ]
+
+    // get price and and sale_price
+    const { price, sale_price } = await knex('item')
+      .select('price', 'sale_price')
+      .where('product_id', '=', id)
+      .andWhere('available', '>', 0)
+      .orderBy('created_at', 'desc')
+      .limit(1)
+      .first()
+    result = { price, sale_price }
   }
-  console.log(qnex.select(columns).where('p.id', '=', id).groupBy('p.id').toString())
-  const result = await qnex.select(columns).where('p.id', '=', id).groupBy('p.id');
+  const _result = await qnex.select(columns)
+    .where('p.id', '=', id)
+    .groupBy('p.id')
+    .first();
+  result = {
+    ..._result,
+    ...result
+  }
   return result
 }

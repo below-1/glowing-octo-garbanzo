@@ -10,6 +10,7 @@ import { Product } from '../entity/Product'
 import { Transaction, Status, Mode, Type } from '../entity/Transaction'
 import { DeleteInput } from './commons'
 import { AccountsReceivable as AR } from '../entity/AccountsReceivable'
+import { addDays } from 'date-fns'
 
 interface OrderItemInput {
   product_id: number;
@@ -65,7 +66,7 @@ export async function new_sell({ em, payload, admin } : SellInput) {
     order_item.product = product
     order_item.order = order
     order_item.sku = item.sku
-    order_item.price = item.price
+    order_item.price = item.sale_price
     order_item.discount = item.discount;
     order_item.quantity = it.quantity;
     order_items.push(order_item)
@@ -123,10 +124,23 @@ export async function new_sell({ em, payload, admin } : SellInput) {
   // save accounts receivable
   const nominal = new BigNumber(payload.trans_nominal)
   if (nominal.lt(t4_gt)) {
+    if (!payload.ar_due_at) {
+      throw new Error('Due Date of AR payments is not provided')
+    }
+    let ar_due_date: Date;
+    if (isNaN(Date.parse(payload.ar_due_at))) {
+      if (isNaN(parseInt(payload.ar_due_at))) {
+        throw new Error('Due Date of AR payments is not valid')
+      }
+      ar_due_date = addDays(new Date(), parseInt(payload.ar_due_at))
+    } else {
+      ar_due_date = new Date(payload.ar_due_at)
+    }
+
     let ar = new AR()
     ar.order = order
-    ar.due_at = new Date(payload.ar_due_at)
-    ar.admin = admin;
+    ar.due_at = ar_due_date
+    ar.admin = admin
     ar.total = t4_gt.sub(nominal).toFixed(4).toString()
     em.persist(ar)
   }
@@ -135,7 +149,7 @@ export async function new_sell({ em, payload, admin } : SellInput) {
   em.persist(order)
   await em.flush()
 
-  return order
+  return { order, transaction }
 }
 
 export async function remove_sell ({ em, id } : DeleteInput) {
