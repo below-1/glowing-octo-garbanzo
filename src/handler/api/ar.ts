@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify'
 import * as fastify from 'fastify';
 import { Order, Status } from '../../entity/Order'
 import { AccountsReceivable as AR } from '../../entity/AccountsReceivable'
+import { ARPayment } from '../../entity/ARPayment'
 
 interface CreatePayload {
   order_id: number;

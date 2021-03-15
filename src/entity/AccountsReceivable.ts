@@ -7,10 +7,10 @@ export class AccountsReceivable {
   @PrimaryKey()
   id: number;
 
-  @ManyToOne()
+  @ManyToOne({ onDelete: 'cascade' })
   order: Order;
 
-  @ManyToOne()
+  @ManyToOne({ onDelete: 'set null' })
   admin: User;
 
   @Property()

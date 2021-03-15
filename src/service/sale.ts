@@ -9,6 +9,7 @@ import { Role } from '../entity/Role'
 import { Product } from '../entity/Product'
 import { Transaction, Status, Mode, Type } from '../entity/Transaction'
 import { DeleteInput } from './commons'
+import { AccountsReceivable as AR } from '../entity/AccountsReceivable'
 
 interface OrderItemInput {
   product_id: number;
@@ -28,6 +29,7 @@ export interface SellData {
   trans_status: Status;
   trans_mode?: Mode;
   trans_nominal: string;
+  ar_due_at: string;
 }
 
 interface SellInput {
@@ -121,7 +123,12 @@ export async function new_sell({ em, payload, admin } : SellInput) {
   // save accounts receivable
   const nominal = new BigNumber(payload.trans_nominal)
   if (nominal.lt(t4_gt)) {
-    order.status = OrderStatus.AR
+    let ar = new AR()
+    ar.order = order
+    ar.due_at = new Date(payload.ar_due_at)
+    ar.admin = admin;
+    ar.total = t4_gt.sub(nominal).toFixed(4).toString()
+    em.persist(ar)
   }
 
   em.persist(transaction)
