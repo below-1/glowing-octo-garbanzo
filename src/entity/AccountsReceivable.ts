@@ -21,10 +21,4 @@ export class AccountsReceivable {
 
   @Property({ columnType: 'numeric(17, 4)' })
   total: string;
-
-  @Property({ columnType: 'numeric(17, 4)' })
-  total_paid: string;
-
-  @Property({ columnType: 'numeric(17, 4)' })
-  leftover: string;
 }
