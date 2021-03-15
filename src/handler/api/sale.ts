@@ -99,6 +99,7 @@ export default async (fastify: FastifyInstance) => {
 
       const orders = await em.createQueryBuilder(Order, 'o')
         .select('*')
+        .leftJoinAndSelect('o.user', 'u')
         .where({ type: 2 })
         .limit(per_page)
         .offset(offset)

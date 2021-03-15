@@ -124,4 +124,15 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
+  fastify.get<{ Params: ID }>('/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const { id } = request.params
+      const ar = await em.findOne(AR, id, {
+        populate: ['order', 'payments']
+      })
+      reply.send(ar)
+    }
+  })
+
 }
