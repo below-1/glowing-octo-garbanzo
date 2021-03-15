@@ -8,6 +8,7 @@ import purchase_handler from './purchase'
 import sale_handler from './sale'
 import item_handler from './item'
 import ar_handler from './ar'
+import opex_handler from './opex'
 
 export default async (fastify: FastifyInstance) => {
 
@@ -43,5 +44,6 @@ export default async (fastify: FastifyInstance) => {
     fastify.register(sale_handler, { prefix: '/sale' })
     fastify.register(item_handler, { prefix: '/item' })
     fastify.register(ar_handler, { prefix: '/ar' })
+    fastify.register(opex_handler, { prefix: '/opex' })
 
 }
