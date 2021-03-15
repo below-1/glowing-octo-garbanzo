@@ -1,7 +1,8 @@
-import { Entity, Enum, ManyToOne, Property, PrimaryKey } from '@mikro-orm/core'
+import { Collection, Entity, Enum, ManyToOne, OneToMany, Property, PrimaryKey } from '@mikro-orm/core'
 import { Mode, Status } from './Transaction'
 import { User } from './User'
 import { Order } from './Order'
+import { ARPayment } from './ARPayment'
 
 export class AccountsReceivable {
   @PrimaryKey()
@@ -10,11 +11,17 @@ export class AccountsReceivable {
   @ManyToOne({ onDelete: 'cascade' })
   order: Order;
 
+  @OneToMany(() => ARPayment, payment => payment.ar)
+  payments = new Collection<ARPayment>(this);
+
   @ManyToOne({ onDelete: 'set null' })
   admin: User;
 
   @Property()
   created_at: Date = new Date();
+
+  @Property()
+  complete: boolean = false;
 
   @Property()
   due_at: Date;
