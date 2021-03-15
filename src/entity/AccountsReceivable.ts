@@ -9,7 +9,7 @@ export class AccountsReceivable {
   @PrimaryKey()
   id: number;
 
-  @ManyToOne({ onDelete: 'cascade', hidden: true })
+  @ManyToOne({ onDelete: 'cascade' })
   order: Order;
 
   @OneToMany(() => ARPayment, payment => payment.ar)

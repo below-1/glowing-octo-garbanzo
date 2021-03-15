@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify'
+import { QueryOrder } from '@mikro-orm/core'
 import BigNumber from 'big.js'
 import * as fastify from 'fastify';
 import { Order, Status } from '../../entity/Order'
@@ -15,6 +16,11 @@ interface CreatePayload {
 interface DeleteParams {
   id: number;
   id_payment: number;
+}
+
+interface FindOptions {
+  per_page: number;
+  page: number;
 }
 
 export default async (fastify: FastifyInstance) => {
@@ -92,6 +98,29 @@ export default async (fastify: FastifyInstance) => {
       }
       await em.flush()
       reply.send({ message: 'ok' })
+    }
+  })
+
+  fastify.get<{ Querystring: FindOptions }>('/', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const { per_page, page } = request.query
+
+      const count_result = await em.execute('select count(*) as total from "accounts_receivable"')
+      const total_data = parseInt(count_result[0].total)
+      const total_page = Math.ceil(total_data / per_page)
+      const offset = page * per_page
+
+      const items = await em.createQueryBuilder(AR, 'ar')
+        .select('*')
+        .orderBy({ created_at: QueryOrder.DESC })
+        .getResultList()
+
+      reply.send({
+        total_data,
+        total_page,
+        items
+      })
     }
   })
 

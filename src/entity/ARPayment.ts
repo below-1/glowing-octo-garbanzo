@@ -7,7 +7,7 @@ export class ARPayment {
   @PrimaryKey()
   id: number;
 
-  @ManyToOne(() => AccountsReceivable, { onDelete: 'cascade' })
+  @ManyToOne(() => AccountsReceivable, { onDelete: 'cascade', hidden: true })
   ar: AccountsReceivable;
 
   @ManyToOne({ onDelete: 'set null', hidden: true })

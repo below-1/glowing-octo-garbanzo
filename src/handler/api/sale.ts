@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify'
+import { QueryOrder } from '@mikro-orm/core'
 import * as fastify from 'fastify';
 import * as serv from '../../service/sale'
 import { ID } from './commons'
@@ -7,6 +8,11 @@ import { Order } from '../../entity/Order'
 import { Transaction } from '../../entity/Transaction'
 import { AccountsReceivable as AR } from '../../entity/AccountsReceivable'
 import BigNumber from 'big.js'
+
+interface FindOptions {
+  per_page: number;
+  page?: number;
+}
 
 export default async (fastify: FastifyInstance) => {
 
@@ -54,7 +60,7 @@ export default async (fastify: FastifyInstance) => {
       const em = request.em;
       const id = request.params.id;
       let result: any = {}
-      const order = await em.findOne(Order, id)
+      const order = await em.findOne(Order, id, ['user'])
       if (!order) {
         reply.status(404).send({ message: 'NOT_FOUND' })
         return;
@@ -76,6 +82,33 @@ export default async (fastify: FastifyInstance) => {
         result.ar = await em.findOne(AR, { order }, ['payments'])
       }
       reply.send(result)
+    }
+  })
+
+  fastify.get<{ Querystring: FindOptions }>('/', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const opts = request.query
+      const per_page = opts.per_page
+      const page = opts.page ? opts.page : 0
+
+      const count_result = await em.execute('select count(*) as total from "order" where "type" = 2')
+      const total_data = parseInt(count_result[0].total)
+      const total_page = Math.ceil(total_data / per_page)
+      const offset = page * per_page
+
+      const orders = await em.createQueryBuilder(Order, 'o')
+        .select('*')
+        .where({ type: 2 })
+        .limit(per_page)
+        .offset(offset)
+        .orderBy({ created_at: QueryOrder.DESC })
+        .getResultList()
+      reply.send({
+        items: orders,
+        total_data,
+        total_page
+      })
     }
   })
 
