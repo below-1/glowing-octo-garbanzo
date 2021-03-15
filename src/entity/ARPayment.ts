@@ -10,7 +10,7 @@ export class ARPayment {
   @ManyToOne(() => AccountsReceivable, { onDelete: 'cascade' })
   ar: AccountsReceivable;
 
-  @ManyToOne({ onDelete: 'set null' })
+  @ManyToOne({ onDelete: 'set null', hidden: true })
   admin: User;
 
   @Property({ columnType: 'numeric(17, 4)' })
@@ -19,7 +19,7 @@ export class ARPayment {
   @Property()
   created_at: Date = new Date();
 
-  @Property()
+  @Property({ nullable: true })
   updated_at: Date;
 
   @Property({ nullable: true })

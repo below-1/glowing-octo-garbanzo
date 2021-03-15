@@ -9,13 +9,13 @@ export class AccountsReceivable {
   @PrimaryKey()
   id: number;
 
-  @ManyToOne({ onDelete: 'cascade' })
+  @ManyToOne({ onDelete: 'cascade', hidden: true })
   order: Order;
 
   @OneToMany(() => ARPayment, payment => payment.ar)
   payments = new Collection<ARPayment>(this);
 
-  @ManyToOne({ onDelete: 'set null' })
+  @ManyToOne({ onDelete: 'set null', hidden: true })
   admin: User;
 
   @Property()
