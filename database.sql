@@ -10,7 +10,7 @@ alter table "product_categories" add constraint "product_categories_pkey" primar
 
 create table "user" ("id" serial primary key, "username" varchar(255) null, "password_hash" varchar(255) null, "first_name" varchar(255) null, "last_name" varchar(255) null, "mobile" varchar(255) null, "email" varchar(255) null, "registered_at" timestamptz(0) null, "last_login" timestamptz(0) null, "address" varchar(255) null, "role" text check ("role" in ('ADMIN', 'SUPPLIER', 'CUSTOMER')) not null);
 
-create table "order" ("id" serial primary key, "user_id" int4 not null, "type" smallint not null, "status" text check ("status" in ('CHECKOUT', 'DELIVERED', 'PAID', 'FAILED', 'RETURNED', 'COMPLETE')) not null, "item_discount" numeric(17, 4) not null, "tax" numeric(17, 4) not null, "shipping" numeric(17, 4) not null, "sub_total" numeric(17, 4) not null, "total" numeric(17, 4) not null, "grand_total" numeric(17, 4) not null, "promo" varchar(255) null, "discount" numeric(17, 4) not null, "created_at" timestamptz(0) not null, "updated_at" timestamptz(0) null, "content" varchar(255) null);
+create table "order" ("id" serial primary key, "user_id" int4 not null, "type" smallint not null, "status" text check ("status" in ('CHECKOUT', 'DELIVERED', 'PAID', 'FAILED', 'RETURNED', 'COMPLETE', 'AR')) not null, "item_discount" numeric(17, 4) not null, "tax" numeric(17, 4) not null, "shipping" numeric(17, 4) not null, "sub_total" numeric(17, 4) not null, "total" numeric(17, 4) not null, "grand_total" numeric(17, 4) not null, "promo" varchar(255) null, "discount" numeric(17, 4) not null, "created_at" timestamptz(0) not null, "updated_at" timestamptz(0) null, "content" varchar(255) null);
 
 create table "item" ("id" serial primary key, "created_by_id" int4 not null, "supplier_id" int4 not null, "order_id" int4 not null, "product_id" int4 not null, "sku" varchar(255) null, "discount" numeric(17, 4) not null, "sale_price" numeric(17, 4) not null, "price" numeric(17, 4) not null, "quantity" integer not null, "sold" integer not null, "available" integer not null, "defective" integer not null, "created_at" timestamptz(0) not null, "updated_at" timestamptz(0) null, "content" varchar(255) null);
 
@@ -19,6 +19,12 @@ create table "order_item" ("id" serial primary key, "product_id" int4 not null, 
 create table "auth_token" ("id" serial primary key, "user_id" int4 not null, "expired" timestamptz(0) not null, "token" varchar(255) not null);
 
 create table "transaction" ("id" serial primary key, "user_id" int4 not null, "order_id" int4 not null, "nominal" numeric(17, 4) not null, "code" varchar(255) not null, "type" text check ("type" in ('CREDIT', 'DEBIT')) not null, "mode" text check ("mode" in ('OFFLINE', 'CASH', 'ON_DELIVERY', 'CHEQUE_DRAFT', 'WIRED', 'ONLINE')) not null, "status" text check ("status" in ('NEW', 'CANCELLED', 'FAILED', 'PENDING', 'DECLINED', 'REJECTED', 'SUCCESS')) not null, "created_at" timestamptz(0) not null, "updated_at" timestamptz(0) null);
+
+create table "accounts_receivable" ("id" serial primary key, "order_id" int4 not null, "admin_id" int4 not null, "created_at" timestamptz(0) not null, "complete" bool not null, "due_at" timestamptz(0) not null, "total" numeric(17, 4) not null);
+
+create table "arpayment" ("id" serial primary key, "ar_id" int4 not null, "admin_id" int4 not null, "nominal" numeric(17, 4) not null, "created_at" timestamptz(0) not null, "updated_at" timestamptz(0) not null, "content" varchar(255) null);
+
+create table "operating_expense" ("id" serial primary key, "admin_id" int4 not null, "nominal" numeric(17, 4) not null, "type" text check ("type" in ('A', 'B')) not null, "mode" text check ("mode" in ('OFFLINE', 'CASH', 'ON_DELIVERY', 'CHEQUE_DRAFT', 'WIRED', 'ONLINE')) not null, "created_at" timestamptz(0) not null, "updated_at" timestamptz(0) null, "status" text check ("status" in ('A', 'B', 'C')) not null);
 
 alter table "product_categories" add constraint "product_categories_product_id_foreign" foreign key ("product_id") references "product" ("id") on update cascade on delete cascade;
 alter table "product_categories" add constraint "product_categories_category_id_foreign" foreign key ("category_id") references "category" ("id") on update cascade on delete cascade;
@@ -38,6 +44,14 @@ alter table "auth_token" add constraint "auth_token_user_id_foreign" foreign key
 
 alter table "transaction" add constraint "transaction_user_id_foreign" foreign key ("user_id") references "user" ("id") on update cascade;
 alter table "transaction" add constraint "transaction_order_id_foreign" foreign key ("order_id") references "order" ("id") on update cascade on delete cascade;
+
+alter table "accounts_receivable" add constraint "accounts_receivable_order_id_foreign" foreign key ("order_id") references "order" ("id") on update cascade on delete cascade;
+alter table "accounts_receivable" add constraint "accounts_receivable_admin_id_foreign" foreign key ("admin_id") references "user" ("id") on update cascade on delete set null;
+
+alter table "arpayment" add constraint "arpayment_ar_id_foreign" foreign key ("ar_id") references "accounts_receivable" ("id") on update cascade on delete cascade;
+alter table "arpayment" add constraint "arpayment_admin_id_foreign" foreign key ("admin_id") references "user" ("id") on update cascade on delete set null;
+
+alter table "operating_expense" add constraint "operating_expense_admin_id_foreign" foreign key ("admin_id") references "user" ("id") on update cascade;
 
 set session_replication_role = 'origin';
 

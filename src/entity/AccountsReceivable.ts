@@ -4,6 +4,7 @@ import { User } from './User'
 import { Order } from './Order'
 import { ARPayment } from './ARPayment'
 
+@Entity()
 export class AccountsReceivable {
   @PrimaryKey()
   id: number;

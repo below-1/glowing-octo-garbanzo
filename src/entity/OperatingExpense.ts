@@ -1,10 +1,16 @@
 import { Entity, Enum, ManyToOne, Property, PrimaryKey } from '@mikro-orm/core'
-import { Mode, Status } from './Transaction'
+import { Mode } from './Transaction'
 import { User } from './User'
 
 export enum Type {
     A = 'A',
     B = 'B'
+}
+
+export enum Status {
+  A = "A",
+  B = "B",
+  C = "C"
 }
 
 @Entity()
@@ -13,7 +19,7 @@ export class OperatingExpense {
   id: number;
 
   @ManyToOne()
-  user!: User;
+  admin!: User;
 
   @Property({ columnType: 'numeric(17, 4)' })
   nominal: string;
