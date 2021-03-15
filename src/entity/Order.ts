@@ -7,7 +7,8 @@ export enum Status {
     PAID = 'PAID',
     FAILED = 'FAILED',
     RETURNED = 'RETURNED',
-    COMPLETE = 'COMPLETE'
+    COMPLETE = 'COMPLETE',
+    AR = 'AR'
 }
 
 @Entity()

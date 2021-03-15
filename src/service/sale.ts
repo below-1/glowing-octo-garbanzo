@@ -27,6 +27,7 @@ export interface SellData {
   items: OrderItemInput[];
   trans_status: Status;
   trans_mode?: Mode;
+  trans_nominal: string;
 }
 
 interface SellInput {
@@ -114,7 +115,14 @@ export async function new_sell({ em, payload, admin } : SellInput) {
   transaction.user = admin;
   transaction.status = payload.trans_status;
   transaction.created_at = payload.created_at ? new Date(payload.created_at) : new Date();
-  transaction.nominal = order.grand_total;
+  transaction.nominal = payload.trans_nominal;
+
+  // if nominal less than grand_total
+  // save accounts receivable
+  const nominal = new BigNumber(payload.trans_nominal)
+  if (nominal.lt(t4_gt)) {
+    order.status = OrderStatus.AR
+  }
 
   em.persist(transaction)
   em.persist(order)
