@@ -12,6 +12,11 @@ interface CreatePayload {
   content?: string;
 }
 
+interface DeleteParams {
+  id: number;
+  id_payment: number;
+}
+
 export default async (fastify: FastifyInstance) => {
 
   fastify.post<{ Body: CreatePayload, Params: ID }>('/:id/payments', {
@@ -63,6 +68,30 @@ export default async (fastify: FastifyInstance) => {
       await em.flush()
 
       reply.send(ar)
+    }
+  })
+
+  fastify.delete<{ Params: DeleteParams }>('/:id/payments/:id_payment', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const { id, id_payment } = request.params
+      let ar = await em.findOne(AR, id)
+      if (!ar) {
+        reply.status(404).send({ message: `can't find AR(id=${id})` })
+        return
+      }
+      let ar_payment = em.getReference(ARPayment, id_payment)
+      if (!ar_payment) {
+        reply.status(404).send({ message: `can't find ARPayment(id=${id_payment})` })
+        return
+      }
+      em.remove(ar_payment)
+      if (ar.complete) {
+        ar.complete = false
+        em.persist(ar)
+      }
+      await em.flush()
+      reply.send({ message: 'ok' })
     }
   })
 
