@@ -1,6 +1,9 @@
 import { randomBytes } from 'crypto'
-import { Entity, Enum, Property, PrimaryKey, ManyToOne } from '@mikro-orm/core'
+import { Entity, Enum, Property, PrimaryKey, ManyToOne, OneToOne } from '@mikro-orm/core'
 import { Order } from './Order'
+import { OperatingExpense as Opex } from './OperatingExpense'
+import { Delay } from './Delay'
+import { AccountsReceivable } from './AccountsReceivable'
 import { User } from './User'
 
 export enum Type {
@@ -35,8 +38,14 @@ export class Transaction {
     @ManyToOne()
     user!: User;
 
-    @ManyToOne({ onDelete: 'cascade' })
-    order!: Order;
+    @ManyToOne({ entity: () => Delay, onDelete: 'cascade', nullable: true })
+    delay: Delay;
+
+    @OneToOne({ onDelete: 'cascade', nullable: true })
+    order: Order;
+
+    @ManyToOne({ onDelete: 'cascade', nullable: true })
+    opex: Opex;
 
     @Property({ columnType: 'numeric(17, 4)' })
     nominal: string;

@@ -1,5 +1,7 @@
-import { Entity, Enum, Property, PrimaryKey, ManyToOne } from '@mikro-orm/core'
+import { Entity, Enum, Property, PrimaryKey, ManyToOne, OneToOne } from '@mikro-orm/core'
 import { User } from './User'
+import { Transaction } from './Transaction'
+import { Delay } from './Delay'
 
 export enum Status {
     CHECKOUT = 'CHECKOUT',
@@ -18,6 +20,12 @@ export class Order {
 
     @ManyToOne()
     user!: User;
+
+    @OneToOne({ entity: () => Delay, inversedBy: 'order', nullable: true })
+    delay: Delay;
+
+    @OneToOne({ entity: () => Transaction, inversedBy: 'order', nullable: true })
+    transaction: Transaction;
 
     @Property({ columnType: 'smallint' })
     type: number;

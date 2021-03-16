@@ -9,6 +9,8 @@ import { Role } from '../entity/Role'
 import { Product } from '../entity/Product'
 import { Transaction, Status, Mode, Type } from '../entity/Transaction'
 import { DeleteInput, DateFilter } from './commons'
+import { Delay, Type as DelayType } from '../entity/Delay'
+import { addDays } from 'date-fns'
 
 export interface PurchaseFilter {
   date_filter?: DateFilter;
@@ -43,6 +45,8 @@ export interface BuyData {
   items: ProductItem[];
   trans_status: Status;
   trans_mode?: Mode;
+  trans_nominal?: string;
+  delay_due_date: string;
 }
 
 export interface BuyInput {
@@ -124,6 +128,34 @@ export async function new_purchase ({ em, payload, admin } : BuyInput) {
   transaction.created_at = payload.created_at ? new Date(payload.created_at) : new Date();
   transaction.nominal = order.grand_total;
 
+  const nominal = new BigNumber(payload.trans_nominal ? payload.trans_nominal : order.grand_total)
+  if (nominal.lt(t4_gt)) {
+    if (!payload.delay_due_date) {
+      throw new Error('Due Date of Delay Payments is not provided')
+    }
+    let due_date: Date;
+    if (isNaN(Date.parse(payload.delay_due_date))) {
+      if (isNaN(parseInt(payload.delay_due_date))) {
+        throw new Error('Due Date of Delay payments is not valid')
+      }
+      due_date = addDays(new Date(), parseInt(payload.delay_due_date))
+    } else {
+      due_date = new Date(payload.delay_due_date)
+    }
+
+    let delay = new Delay()
+    delay.type = DelayType.PAYABLE
+    delay.due_date = due_date
+    delay.order = order
+    delay.admin = admin
+    delay.total = t4_gt.sub(nominal).toFixed(4).toString()
+    order.delay = delay
+    em.persist(delay)
+  } else {
+    transaction.order = order
+    order.transaction = transaction  
+  }
+  
   em.persist(transaction)
   em.persist(order)
   await em.flush()

@@ -3,7 +3,7 @@ import { FastifyInstance } from 'fastify'
 import BigNumber from 'big.js'
 import * as fastify from 'fastify';
 import { ID } from './commons'
-import { OperatingExpense as Opex, Type, Status } from '../../entity/OperatingExpense'
+import { OperatingExpense as Opex } from '../../entity/OperatingExpense'
 import { Mode } from '../../entity/Transaction'
 
 export default async (fastify: FastifyInstance) => {
@@ -13,12 +13,8 @@ export default async (fastify: FastifyInstance) => {
       const payload = request.body as any;
       const em = request.em;
       let opex = new Opex();
-      opex.admin = request.user;
-      opex.type = <Type>payload.type;
-      opex.mode = <Mode>payload.mode;
-      opex.status = <Status>payload.status
+      opex.name = payload.name;
       opex.created_at = payload.created_at ? new Date(payload.created_at) : new Date();
-      opex.nominal = payload.nominal;
       em.persist(opex);
       await em.flush();
       reply.send(opex);
@@ -37,12 +33,8 @@ export default async (fastify: FastifyInstance) => {
         })
         return;
       }
-      opex.type = <Type>payload.type
-      opex.mode = <Mode>payload.mode
-      opex.status = <Status>payload.status
-      // opex.created_at = payload.created_at ? new Date(payload.created_at) : new Date()
-      opex.updated_at = new Date()
-      opex.nominal = payload.nominal
+      opex.name = payload.name;
+      opex.updated_at = new Date();
       em.persist(opex)
       await em.flush()
       reply.send(opex)

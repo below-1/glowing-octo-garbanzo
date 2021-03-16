@@ -5,9 +5,9 @@ import product_handler from './product'
 import supplier_handler from './supplier'
 import customer_handler from './customer'
 import purchase_handler from './purchase'
-import sale_handler from './sale'
+// import sale_handler from './sale'
 import item_handler from './item'
-import ar_handler from './ar'
+// import ar_handler from './ar'
 import opex_handler from './opex'
 
 export default async (fastify: FastifyInstance) => {
@@ -41,9 +41,9 @@ export default async (fastify: FastifyInstance) => {
     fastify.register(supplier_handler, { prefix: '/supplier' })
     fastify.register(customer_handler, { prefix: '/customer' })
     fastify.register(purchase_handler, { prefix: '/purchase' })
-    fastify.register(sale_handler, { prefix: '/sale' })
+    // fastify.register(sale_handler, { prefix: '/sale' })
     fastify.register(item_handler, { prefix: '/item' })
-    fastify.register(ar_handler, { prefix: '/ar' })
+    // fastify.register(ar_handler, { prefix: '/ar' })
     fastify.register(opex_handler, { prefix: '/opex' })
 
 }

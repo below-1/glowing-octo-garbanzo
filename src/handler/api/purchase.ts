@@ -20,6 +20,8 @@ export default async (fastify: FastifyInstance) => {
           discount: { type: 'integer', default: 0, min: 0, max: 100 },
           trans_status: { type: 'string', enum: ['NEW', 'CANCELLED', 'FAILED', 'PENDING', 'DECLINED', 'REJECTED', 'SUCCESS'] },
           trans_mode: { type: 'string', enum: ['OFFLINE', 'CASH', 'ON_DELIVERY', 'CHEQUE_DRAFT', 'WIRED', 'ONLINE'] },
+          trans_nominal: { type: 'string' },
+          delay_due_date: { type: 'string' },
           items: {
             type: 'array',
             items: {
@@ -52,6 +54,8 @@ export default async (fastify: FastifyInstance) => {
           sale_price: `${it.sale_price}`,
         }
       })
+      console.log(payload)
+
       try {
         const order = await serv.new_purchase({
           em: request.em,
