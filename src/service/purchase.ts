@@ -237,7 +237,7 @@ export async function find_purchase (opts: PurchaseFilterParams) {
 }
 
 export async function find_purchase_by_id ({ em, id } : { em: EntityManager, id: number }) {
-  const order: Order = (await em.findOne(Order, id, ['user'])) as Order;
+  const order: Order = (await em.findOne(Order, id, ['user', 'transaction', 'delay'])) as Order;
   const item_repo = em.getRepository(Item);
   const items = await em.find(Item, 
     {
