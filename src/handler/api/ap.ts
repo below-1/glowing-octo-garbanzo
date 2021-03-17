@@ -19,6 +19,7 @@ interface DeleteParams {
 }
 
 export default async (fastify: FastifyInstance) => {
+
   fastify.post<{ Body: PaymentPayload, Params: ID }>('/:id/payments', {
     handler: async (request, reply) => {
       const em = request.em;
@@ -31,8 +32,8 @@ export default async (fastify: FastifyInstance) => {
         if (!delay) {
           throw new Error('DELAY_NOT_FOUND')
         }
-        if (delay.type != Type.RECEIVABLE) {
-          throw new Error('Delay is not RECEIVABLE')
+        if (delay.type != Type.PAYABLE) {
+          throw new Error('Delay is payable')
         }
 
         const nominal = new BigNumber(payload.nominal)
@@ -55,7 +56,7 @@ export default async (fastify: FastifyInstance) => {
         let transaction = new Transaction()
         transaction.created_at = payload.created_at ? new Date(payload.created_at) : new Date()
         transaction.status = TransStatus.SUCCESS
-        transaction.type = TransType.DEBIT
+        transaction.type = TransType.CREDIT
         transaction.nominal = payload.nominal
         transaction.user = admin
         transaction.mode = payload.mode
@@ -124,4 +125,5 @@ export default async (fastify: FastifyInstance) => {
       return delay
     }
   })
+
 }

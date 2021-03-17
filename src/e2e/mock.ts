@@ -68,7 +68,7 @@ async function main() {
   const N_PRODUCT = 100
   const N_SUPPLIER = 5
   const N_CUSTOMER = 20
-  const N_PURCHASE = 2
+  const N_PURCHASE = 20
   const cat_responses_proms = range(N_CAT)
     .map(i => ({
        title: chance.name()

@@ -16,7 +16,7 @@ export default async (fastify: FastifyInstance) => {
           created_at: { type: 'string', format: 'date-time' },
           content: { type: 'string' },
           status: { type: 'string', enum: ['NEW', 'CHECKOUT', 'PAID', 'FAILED', 'SHIPPED', 'DELIVERED', 'RETURNED', 'COMPLETE'] },
-          shipping: { type: 'integer', default: 0, min: 0, max: 100 },
+          shipping: { type: 'integer', default: 0 },
           discount: { type: 'integer', default: 0, min: 0, max: 100 },
           trans_status: { type: 'string', enum: ['NEW', 'CANCELLED', 'FAILED', 'PENDING', 'DECLINED', 'REJECTED', 'SUCCESS'] },
           trans_mode: { type: 'string', enum: ['OFFLINE', 'CASH', 'ON_DELIVERY', 'CHEQUE_DRAFT', 'WIRED', 'ONLINE'] },

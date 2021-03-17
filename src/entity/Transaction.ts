@@ -67,4 +67,7 @@ export class Transaction {
 
     @Property({ nullable: true })
     updated_at?: Date;
+
+    @Property({ nullable: true })
+    content?: string;
 }
