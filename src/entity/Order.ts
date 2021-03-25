@@ -21,10 +21,10 @@ export class Order {
     @ManyToOne()
     user!: User;
 
-    @OneToOne({ entity: () => Delay, inversedBy: 'order', nullable: true })
+    @OneToOne({ entity: () => Delay, inversedBy: 'order', nullable: true, onDelete: 'cascade' })
     delay: Delay;
 
-    @OneToOne({ entity: () => Transaction, inversedBy: 'order', nullable: true })
+    @OneToOne({ entity: () => Transaction, inversedBy: 'order', nullable: true, onDelete: 'cascade' })
     transaction: Transaction;
 
     @Property({ columnType: 'smallint' })

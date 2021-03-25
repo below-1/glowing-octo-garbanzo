@@ -8,12 +8,15 @@ export class OrderItem {
     @PrimaryKey()
     id: number;
 
-    @ManyToOne({ onDelete: 'cascade' })
+    // OrderItem should reject delete when there is parent in product
+    @ManyToOne({  })
     product!: Product;
 
-    @ManyToOne({ onDelete: 'cascade' })
+    // OrderItem should reject delete when there is parent in item
+    @ManyToOne()
     item!: Item;
 
+    // Cascade on order delete
     @ManyToOne({ onDelete: 'cascade' })
     order!: Order;
 

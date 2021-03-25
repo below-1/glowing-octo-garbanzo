@@ -39,16 +39,16 @@ alter table "transaction" add constraint "transaction_order_id_foreign" foreign 
 alter table "transaction" add constraint "transaction_opex_id_foreign" foreign key ("opex_id") references "operating_expense" ("id") on update cascade on delete cascade;
 
 alter table "order" add constraint "order_user_id_foreign" foreign key ("user_id") references "user" ("id") on update cascade;
-alter table "order" add constraint "order_delay_id_foreign" foreign key ("delay_id") references "delay" ("id") on update cascade on delete set null;
-alter table "order" add constraint "order_transaction_id_foreign" foreign key ("transaction_id") references "transaction" ("id") on update cascade on delete set null;
+alter table "order" add constraint "order_delay_id_foreign" foreign key ("delay_id") references "delay" ("id") on update cascade on delete cascade;
+alter table "order" add constraint "order_transaction_id_foreign" foreign key ("transaction_id") references "transaction" ("id") on update cascade on delete cascade;
 
 alter table "item" add constraint "item_created_by_id_foreign" foreign key ("created_by_id") references "user" ("id") on update cascade;
 alter table "item" add constraint "item_supplier_id_foreign" foreign key ("supplier_id") references "user" ("id") on update cascade on delete cascade;
 alter table "item" add constraint "item_order_id_foreign" foreign key ("order_id") references "order" ("id") on update cascade on delete cascade;
 alter table "item" add constraint "item_product_id_foreign" foreign key ("product_id") references "product" ("id") on update cascade;
 
-alter table "order_item" add constraint "order_item_product_id_foreign" foreign key ("product_id") references "product" ("id") on update cascade on delete cascade;
-alter table "order_item" add constraint "order_item_item_id_foreign" foreign key ("item_id") references "item" ("id") on update cascade on delete cascade;
+alter table "order_item" add constraint "order_item_product_id_foreign" foreign key ("product_id") references "product" ("id") on update cascade;
+alter table "order_item" add constraint "order_item_item_id_foreign" foreign key ("item_id") references "item" ("id") on update cascade;
 alter table "order_item" add constraint "order_item_order_id_foreign" foreign key ("order_id") references "order" ("id") on update cascade on delete cascade;
 
 alter table "delay" add constraint "delay_order_id_foreign" foreign key ("order_id") references "order" ("id") on update cascade on delete cascade;
