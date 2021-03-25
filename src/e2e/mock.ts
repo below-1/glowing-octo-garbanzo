@@ -69,6 +69,7 @@ async function main() {
   const N_SUPPLIER = 5
   const N_CUSTOMER = 20
   const N_PURCHASE = 20
+  const N_SALE = 20
   const cat_responses_proms = range(N_CAT)
     .map(i => ({
        title: chance.name()
@@ -189,6 +190,61 @@ async function main() {
     const purchases = purchase_responses.map(resp => resp.data)
     console.log(purchases)
   } catch (err) {
+    if (err.response) {
+      console.log(err.response.data)
+    }
+  }
+
+  const items_response = await api({
+    method: 'get',
+    url: '/api/v1/item/all',
+    headers: {
+      authorization: `Bearer ${token}`
+    }
+  })
+  // console.log('items_response')
+  // console.log(items_response)
+  const ALL_ITEMS: any[] = items_response.data
+
+  const sale_responses_proms = ALL_ITEMS
+    .map((stock_item: any) => {
+      const quantity = chance.natural({ min: 2, max: 5 })
+      const trans_nominal = quantity * (stock_item.sale_price - (stock_item.sale_price * stock_item.discount))
+      const items = [
+        {
+          product_id: stock_item.product,
+          item_id: stock_item.id,
+          quantity
+        }
+      ]
+      let payload = {
+        customer_id: chance.pickone(customers_ids),
+        tax: 0,
+        created_at: (chance.date({ year: 2020 }) as Date).toISOString(),
+        content: chance.sentence({ words: 12 }),
+        discount: chance.pickone([0, 5, 10]),
+        status: 'COMPLETE',
+        trans_status: 'SUCCESS',
+        trans_mode: 'ONLINE',
+        trans_nominal,
+        items
+      }
+      return api({
+        method: 'post',
+        url: '/api/v1/sale',
+        data: payload,
+        headers: {
+          authorization: `Bearer ${token}`
+        }
+      })
+    })
+
+  try {
+    const sale_responses: any[] = await Promise.all(sale_responses_proms)
+    const sales = sale_responses.map(sr => sr.data)
+    console.log(sales)
+  } catch (err) {
+    console.log(err)
     if (err.response) {
       console.log(err.response.data)
     }

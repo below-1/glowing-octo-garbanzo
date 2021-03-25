@@ -1,4 +1,5 @@
-import { Entity, Enum, ManyToOne, Property, PrimaryKey } from '@mikro-orm/core'
+import { Entity, Enum, ManyToOne, OneToMany, Property, PrimaryKey } from '@mikro-orm/core'
+import { Transaction } from './Transaction'
 
 @Entity()
 export class OperatingExpense {
@@ -7,6 +8,9 @@ export class OperatingExpense {
 
   @Property()
   name: string;
+
+  @OneToMany(() => Transaction, transaction => transaction.opex)
+  transactions: Transaction[];
 
   @Property()
   created_at: Date = new Date();

@@ -30,22 +30,23 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
-  fastify.put<{ Body: Partial<User>, Params: ID }>('/:id', {
+  fastify.put<{ Body: any, Params: ID }>('/:id', {
     handler: async (request, reply) => {
-      let payload = request.body
-      payload.role = Role.SUPPLIER
-      let id = request.params.id
-      try {
-        const supplier = await serv.update({
-          em: request.em,
-          payload,
-          id
-        })
-        reply.send(supplier)
-      } catch (err) {
-        console.log(err)
-        reply.status(500).send({ message: err.message })
+      const payload = request.body
+      const id = request.params.id
+      const em = request.em
+      let supplier = await em.findOne(User, id)
+      if (!supplier) {
+        reply.status(404).send({ message: 'SUPPLIER_NOT_FOUND' })
+        return
       }
+      supplier.first_name = payload.first_name
+      supplier.address = payload.address
+      supplier.mobile = payload.mobile
+      supplier.email = payload.email
+      em.persist(supplier)
+      await em.flush()
+      reply.send(supplier)
     }
   })
 
@@ -79,6 +80,18 @@ export default async (fastify: FastifyInstance) => {
         console.log(err)
         reply.status(500).send({ message: err.message })
       }
+    }
+  })
+  fastify.get<{ Params: ID }>('/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const { id } = request.params
+      const supplier = await em.findOne(User, id)
+      if (!supplier) {
+        reply.status(404).send({ message: "SUPPLIER_NOT_FOUND" })
+        return
+      }
+      reply.send(supplier)
     }
   })
 }

@@ -29,4 +29,12 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
+  fastify.get('/all', {
+    handler: async (request, reply) => {
+      const em = request.em;
+      const items = await em.find(Item, { available: { $gt: 0 } })
+      return items
+    }
+  })
+
 }

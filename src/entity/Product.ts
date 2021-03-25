@@ -19,7 +19,7 @@ export class Product {
     created_at: Date = new Date();
 
     @Property({ nullable: true })
-    updated_at?: Date;
+    updated_at?: Date =  new Date();
 
     @Property({ nullable: true })
     content?: string;

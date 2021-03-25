@@ -126,9 +126,9 @@ export async function new_purchase ({ em, payload, admin } : BuyInput) {
   transaction.user = admin;
   transaction.status = payload.trans_status;
   transaction.created_at = payload.created_at ? new Date(payload.created_at) : new Date();
-  transaction.nominal = order.grand_total;
-
   const nominal = new BigNumber(payload.trans_nominal ? payload.trans_nominal : order.grand_total)
+  transaction.nominal = nominal.toString();
+
   if (nominal.lt(t4_gt)) {
     if (!payload.delay_due_date) {
       throw new Error('Due Date of Delay Payments is not provided')
@@ -151,11 +151,9 @@ export async function new_purchase ({ em, payload, admin } : BuyInput) {
     delay.total = t4_gt.sub(nominal).toFixed(4).toString()
     order.delay = delay
     em.persist(delay)
-  } else {
-    transaction.order = order
-    order.transaction = transaction  
   }
-  
+  transaction.order = order
+  order.transaction = transaction  
   em.persist(transaction)
   em.persist(order)
   await em.flush()
@@ -178,7 +176,8 @@ export async function find_purchase (opts: PurchaseFilterParams) {
   let result: any = {};
   let qb = opts.em.createQueryBuilder(Order, "o")
     .select('*')
-    .leftJoinAndSelect('o.user', 's');
+    .leftJoinAndSelect('o.user', 's')
+    .leftJoinAndSelect('o.transaction', 't');
 
   if (opts.date_filter) {
     qb = qb.where({

@@ -70,4 +70,16 @@ export default async (fastify: FastifyInstance) => {
       }
   })
 
+  fastify.get<{ Params: ID }>('/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const id = request.params.id
+      const cat = await em.findOne(Category, id)
+      if (!cat) {
+        throw new Error('NOT_FOUND')
+      }
+      return cat
+    }
+  })
+
 }

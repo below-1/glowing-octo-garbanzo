@@ -3,11 +3,19 @@ import * as fastify from 'fastify';
 import * as serv from '../../service/product'
 import { ID } from './commons'
 import { Product } from '../../entity/Product'
+import { Category } from '../../entity/Category'
 
 interface FindOptions {
   page: number;
   keyword: string;
   per_page: number;
+}
+
+interface ProductUpdateInput {
+  title: string;
+  content?: string;
+  summary: string;
+  selected_categories: number[];
 }
 
 export default async (fastify: FastifyInstance) => {
@@ -28,23 +36,28 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
-  fastify.put<{ Body: serv.ProductData, Params: ID }>('/:id', {
+  fastify.put<{ Body: ProductUpdateInput, Params: ID }>('/:id', {
     handler: async (request, reply) => {
+      const em = request.em
       const id = request.params.id
       const payload = request.body
-      try {
-        const result = await serv.update({
-          em: request.em,
-          payload,
-          id
-        })
-        reply.send(result)
-      } catch (err) {
-        console.log(err)
-        reply.status(500).send({
-          message: err.message
-        })
+
+      let product = await em.findOne(Product, id, { populate: ['categories'] })
+      if (!product) {
+        reply.status(404).send({ message: 'PRODUCT_NOT_FOUND' })
+        return
       }
+      product.title = payload.title
+      product.content = payload.content
+      product.updated_at = new Date()
+      product.summary = payload.summary
+
+      const cats = payload.selected_categories.map(id => em.getReference(Category, id))
+      product.categories.removeAll()
+      product.categories.add(...cats)
+      em.persist(product)
+      await em.flush()
+      reply.send(product)
     }
   })
 
@@ -85,11 +98,12 @@ export default async (fastify: FastifyInstance) => {
 
   fastify.get<{ Params: ID }>('/:id', {
     handler: async (request, reply) => {
+      const em = request.em
       const { id } = request.params;
       const query = request.query as any;
       const stock = query.stock ? query.stock : false;
       try {
-        const result = await serv.findOne({ em: request.em, id, stock  })
+        const result = await serv.findOne({ em, id, stock  })
         reply.send(result)
       } catch (err) {
         console.log(err)

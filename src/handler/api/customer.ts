@@ -34,17 +34,19 @@ export default async (fastify: FastifyInstance) => {
     handler: async (request, reply) => {
       const payload = request.body
       const id = request.params.id
-      try {
-        const result = await serv.update({
-          em: request.em,
-          payload,
-          id
-        })
-        reply.send(result)
-      } catch (err) {
-        console.log(err)
-        reply.status(500).send({ message: err.message })
+      const em = request.em
+      let user = await em.findOne(User, id)
+      if (!user) {
+        throw new Error('CUSTOMER_NOT_FOUND')
       }
+      user.address = payload.address
+      user.first_name = payload.first_name
+      user.last_name = payload.last_name
+      user.mobile = payload.mobile
+      user.email = payload.email
+      em.persist(user)
+      await em.flush()
+      return user
     }
   })
 
@@ -74,6 +76,24 @@ export default async (fastify: FastifyInstance) => {
           ...options
         })
         reply.send(result)
+      } catch (err) {
+        console.log(err)
+        reply.status(500).send({ message: err.message })
+      }
+    }
+  })
+
+  fastify.get<{ Params: ID }>('/:id', {
+    handler: async (request, reply) => {
+      const id = request.params.id
+      const em = request.em
+      try {
+        const customer = await em.findOne(User, id)
+        if (!customer) {
+          reply.status(500).send({ message: 'NOT_FOUND' })
+          return
+        }
+        reply.send(customer)
       } catch (err) {
         console.log(err)
         reply.status(500).send({ message: err.message })

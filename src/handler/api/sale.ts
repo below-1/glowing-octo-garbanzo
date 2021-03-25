@@ -89,8 +89,6 @@ export default async (fastify: FastifyInstance) => {
       order.tax = payload.tax ? payload.tax : '0';
       order.discount = payload.discount ? payload.discount : '0';
       order.created_at = payload.created_at ? new Date(payload.created_at) : new Date()
-      console.log('order')
-      console.log(order)
 
       let order_items: OrderItem[] = []
       for (let it of payload.items) {
@@ -238,7 +236,7 @@ export default async (fastify: FastifyInstance) => {
       return {
         total_data,
         total_page,
-        orders
+        items: orders
       }
     }
   })

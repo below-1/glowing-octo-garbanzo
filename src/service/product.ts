@@ -116,15 +116,19 @@ export async function find ({ em, page, keyword, per_page, stock } : FindOptions
   }
 
   // append grouping
-  qnex = qnex.orderBy('p.title', 'asc')
-            .groupBy(groupBy);
+  qnex = qnex
+    .orderBy([
+      { column: 'p.updated_at', order: 'asc' },
+      { column: 'p.created_at', order: 'asc' }
+    ])
+    .groupBy(groupBy);
 
   if (per_page) {
     qnex = qnex.limit(per_page).offset(offset!);
     result.total_page = total_page!;
   }
 
-  // console.log(qnex.select(columns).toSQL())
+  console.log(qnex.select(columns).toSQL())
   result.items = await qnex.select(columns)
   return result;
 }
