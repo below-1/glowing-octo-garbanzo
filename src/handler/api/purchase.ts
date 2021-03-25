@@ -3,6 +3,14 @@ import * as fastify from 'fastify';
 import * as serv from '../../service/purchase'
 import { ID } from './commons'
 import { Product } from '../../entity/Product'
+import { Status as TransStatus, Mode as TransMode } from '../../entity/Transaction'
+import { Order, Status as OrderStatus } from '../../entity/Order'
+
+interface UpdatePurchasePayload {
+  order_status: OrderStatus;
+  transaction_status: TransStatus;
+  transaction_mode: TransMode;
+}
 
 export default async (fastify: FastifyInstance) => {
 
@@ -132,6 +140,28 @@ export default async (fastify: FastifyInstance) => {
         id: request.params.id
       })
       reply.send(order)
+    }
+  })
+
+  fastify.put<{ Params: ID, Body: UpdatePurchasePayload }>('/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const id = request.params.id
+      const payload = request.body
+      let order = await em.findOne(Order, id, { populate: ['transaction'] })
+      if (!order) {
+        throw new Error('ORDER_NOT_FOUND')
+      }
+      if (!order.transaction) {
+        throw new Error('STATUS_NOT_FOUND')
+      }
+      order.status = payload.order_status
+      order.transaction.status = payload.transaction_status
+      order.transaction.mode = payload.transaction_mode
+      em.persist(order)
+      em.persist(order.transaction)
+      await em.flush()
+      return { message: 'OK' }
     }
   })
 
