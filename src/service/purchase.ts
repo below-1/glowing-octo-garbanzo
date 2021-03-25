@@ -86,6 +86,9 @@ export async function new_purchase ({ em, payload, admin } : BuyInput) {
     items.push(item)
     em.persist(item)
   }
+  if (items.length == 0) {
+    throw new Error('something wrong')
+  }
   const shipping = new BigNumber(order.shipping)
   const tax = new BigNumber(order.tax)
   const discount = new BigNumber(order.discount)
@@ -175,6 +178,7 @@ export async function remove_purchase ({ em, id } : DeleteInput) {
 export async function find_purchase (opts: PurchaseFilterParams) {
   let result: any = {};
   let qb = opts.em.createQueryBuilder(Order, "o")
+    .where({ type: 1 })
     .select('*')
     .leftJoinAndSelect('o.user', 's')
     .leftJoinAndSelect('o.transaction', 't');

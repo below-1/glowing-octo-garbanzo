@@ -104,7 +104,7 @@ async function main() {
   const product_responses = await Promise.all(product_responses_proms)
   const products = product_responses.map(resp => resp.data)
   const products_ids = products.map(p => p.id)
-  // console.log(products)
+  // console.log(products_ids)
 
   const supplier_responses_proms = range(N_SUPPLIER)
     .map(i => ({
@@ -155,7 +155,7 @@ async function main() {
           let quantity = chance.natural({ min: 1, max: 4 }) * 10
           let item_data = {
             product_id: pid,
-            discount: chance.pickone([0,5,10]),
+            discount: 0,
             price,
             sale_price: price + (chance.natural({ min: 1, max: 5 }) * 1000),
             quantity,
@@ -170,7 +170,7 @@ async function main() {
         tax: 0,
         created_at: (chance.date({ year: 2020 }) as Date).toISOString(),
         content: chance.sentence({ words: 12 }),
-        discount: chance.pickone([0, 5, 10]),
+        discount: 0,
         status: 'COMPLETE',
         trans_status: 'SUCCESS',
         trans_mode: 'ONLINE',
