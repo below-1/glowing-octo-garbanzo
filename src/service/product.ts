@@ -53,13 +53,13 @@ export async function remove ({ em, id } : DeleteInput) {
 export async function find ({ em, page, keyword, per_page, stock } : FindOptions) {
   let result: any = {}
   const knex = em.getKnex();
-  let qnex = knex.from('product as p');
+  let qnex = knex.from('product as p').distinctOn('p.id');
   let columns = [
     'p.id', 'p.title',
     knex.raw(`jsonb_agg(distinct c) as categories`)
   ];
   let groupBy: any[] = [
-    'p.id', 'p.title'
+    'p.id'
   ];
 
   if (keyword) {
@@ -71,7 +71,7 @@ export async function find ({ em, page, keyword, per_page, stock } : FindOptions
   let offset: number;
   let total_data: number;
   if (per_page) {
-    let qnex_count = qnex.clone()
+    let qnex_count = knex.from('product as p')
     const _total_data: any[] = await qnex_count.count()
     total_data = parseInt(_total_data[0]['count'])
     total_page = Math.ceil(total_data / per_page)
@@ -86,40 +86,31 @@ export async function find ({ em, page, keyword, per_page, stock } : FindOptions
 
 
   if (stock) {
-    qnex = qnex.leftJoin(
-      knex.from('item')
-        .select([
-          'product_id',
-          knex.raw('sum(quantity) as quantity'),
-          knex.raw('sum(available) as available'),
-          knex.raw('sum(sold) as sold'),
-          knex.raw('sum(defective) as defective')
-        ])
-        .where('available', '>', 0)
-        .groupBy('product_id')
-        .as('stock'),
-     'stock.product_id',
-     'p.id'
-    )
+    qnex = qnex.leftJoin('item as it', 'it.product_id', 'p.id')
+      .leftJoin('order as o', (builder) => {
+        builder.on('o.id', 'it.order_id')
+          .on('o.status', '=', knex.raw("'COMPLETE'"))
+      })
     columns = [
       ...columns,
-      knex.raw(`stock.available`),
-      knex.raw(`stock.sold`),
-      knex.raw(`stock.defective`)
+      knex.raw('sum(it.quantity) as quantity'),
+      knex.raw('sum(it.available) as available'),
+      knex.raw('sum(it.sold) as sold'),
+      knex.raw('sum(it.defective) as defective'),
+      'o.created_at as ordered_at',
+      'o.id as order_id'
     ]
     groupBy = [
       ...groupBy,
-      knex.raw('stock.available'),
-      knex.raw('stock.sold'),
-      knex.raw('stock.defective')
+      'o.id'
     ]
   }
 
   // append grouping
   qnex = qnex
     .orderBy([
-      { column: 'p.updated_at', order: 'asc' },
-      { column: 'p.created_at', order: 'asc' }
+      { column: 'p.id', order: 'asc' },
+      { column: 'o.created_at', order: 'asc' }
     ])
     .groupBy(groupBy);
 

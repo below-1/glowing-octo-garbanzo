@@ -88,6 +88,7 @@ export default async (fastify: FastifyInstance) => {
         })
         reply.send({ message: 'ok' })
       } catch (err) {
+        reply.status(500).send({ message: err.message })
         console.log(err)
       }
     }
