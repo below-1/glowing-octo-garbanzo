@@ -101,7 +101,6 @@ export default async (fastify: FastifyInstance) => {
 
       let order_items: OrderItem[] = []
       for (let it of payload.items) {
-        let order_item = new OrderItem()
         let product = await em.getReference(Product, it.product_id)
         if (!product) {
           throw new Error(`product(id=${it.product_id}) can't be found`)
@@ -122,35 +121,35 @@ export default async (fastify: FastifyInstance) => {
         //   : substract it and move on to next stock
         // Else
         //   : Get out!!!
+        const item = stock_items[stock_items.length - 1]
         let n_qty = it.quantity
         for (let sit of stock_items) {
+          let order_item = new OrderItem()
+          order_item.item = sit
+          order_item.product = product
+          order_item.order = order
+          order_item.sku = item.sku
+          order_item.price = item.sale_price
+          order_item.discount = item.discount;
+          order_item.quantity = it.quantity;
+
           if (sit.available < n_qty) {  
             n_qty = n_qty - sit.available
             sit.sold = sit.available
             sit.available = 0
-            em.persist(sit)
           } else {
             sit.available = sit.available - n_qty
             sit.sold = n_qty
-            em.persist(sit)
+            n_qty = 0
+          }
+          order_item.quantity = sit.sold
+          order_items.push(order_item)
+          em.persist(sit)
+
+          if (n_qty == 0) {
             break
           }
         }
-
-        const total_stock = stock_items.map(sit => sit.available).reduce((a, b) => a + b, 0)
-        const item = stock_items[stock_items.length - 1]
-
-        order_item.item = item
-        order_item.product = product
-        order_item.order = order
-        order_item.sku = item.sku
-        order_item.price = item.sale_price
-        order_item.discount = item.discount;
-        order_item.quantity = it.quantity;
-        order_items.push(order_item)
-
-        em.persist(order_item)
-        em.persist(item)
       }
 
       const shipping = new BigNumber(order.shipping)
