@@ -90,13 +90,18 @@ export default async (fastify: FastifyInstance) => {
       order.discount = payload.discount ? payload.discount : '0';
       order.created_at = payload.created_at ? new Date(payload.created_at) : new Date()
 
+      // const product_ids = payload.items.map((it: any) => it.product_id)
+      // const all_items = await em.find(Item, {
+      //   product: {
+      //     $in: product_ids
+      //   }
+      // })
+      // console.log(all_items)
+      // throw new Error('stop')
+
       let order_items: OrderItem[] = []
       for (let it of payload.items) {
         let order_item = new OrderItem()
-        let item = await em.findOne(Item, it.item_id)
-        if (!item) {
-          throw new Error(`item(id=${it.item_id}) can't be found`)
-        }
         let product = await em.getReference(Product, it.product_id)
         if (!product) {
           throw new Error(`product(id=${it.product_id}) can't be found`)
@@ -107,10 +112,11 @@ export default async (fastify: FastifyInstance) => {
           { 
             $and: [
               { product: it.product_id }, 
-              { status: 'COMPLETE' }
+              { available: { $gt: 0 } }, 
+              { order: { status: 'COMPLETE' } }
             ]
            }, 
-          { orderBy: { created_at: QueryOrder.DESC } })
+          { orderBy: { created_at: QueryOrder.ASC } })
         // For each stock try to substract the quantity out of it
         // If it stock is less than requested quantity (become 0)
         //   : substract it and move on to next stock
@@ -118,19 +124,21 @@ export default async (fastify: FastifyInstance) => {
         //   : Get out!!!
         let n_qty = it.quantity
         for (let sit of stock_items) {
-          let sit_available = sit.available
-          sit_available -= n_qty
-          if (sit_available < 0) {
+          if (sit.available < n_qty) {  
+            n_qty = n_qty - sit.available
+            sit.sold = sit.available
             sit.available = 0
-            n_qty -= sit.available
+            em.persist(sit)
           } else {
-            sit.available = sit_available
+            sit.available = sit.available - n_qty
+            sit.sold = n_qty
             em.persist(sit)
             break
           }
         }
 
         const total_stock = stock_items.map(sit => sit.available).reduce((a, b) => a + b, 0)
+        const item = stock_items[stock_items.length - 1]
 
         order_item.item = item
         order_item.product = product
@@ -140,9 +148,6 @@ export default async (fastify: FastifyInstance) => {
         order_item.discount = item.discount;
         order_item.quantity = it.quantity;
         order_items.push(order_item)
-
-        // decrease the available good in inventory
-        item.available = item.available - it.quantity;
 
         em.persist(order_item)
         em.persist(item)
@@ -161,9 +166,16 @@ export default async (fastify: FastifyInstance) => {
             discount: price.mul(quantity).sub(price.mul(quantity).mul(discount))
           }
         })
+      console.log('items_agg', items_agg.map(it => {
+        return {
+          discount: it.discount.toString(),
+          original: it.original.toString()
+        }
+      }))
       const sub_total = items_agg
         .map(it => it.original)
         .reduce((a, b) => a.plus(b), new BigNumber(0))
+      console.log('sub_total = ', sub_total.toString())
 
       const tot_ship = sub_total.plus(shipping)
       const tot_ship_tax = tot_ship.mul(tax);
@@ -194,6 +206,8 @@ export default async (fastify: FastifyInstance) => {
       // if nominal less than grand_total
       // save accounts receivable
       const nominal = new BigNumber(payload.trans_nominal)
+      console.log('nominal = ', nominal.toString())
+      console.log('t4_gt = ', t4_gt.toString())
       if (nominal.lt(t4_gt)) {
         if (!payload.delay_due_date) {
           throw new Error('Due Date of AR payments is not provided')

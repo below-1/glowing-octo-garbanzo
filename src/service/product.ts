@@ -57,33 +57,39 @@ export async function find ({ em, page, keyword, per_page, only_available } : Fi
   let qnex = knex
     .from('product as p')
     .distinctOn('p.id')
-    .leftJoin('item as it', 'it.product_id', 'p.id')
-    .leftJoin('order as o', function (builder) {
-      builder.on('o.id', 'it.order_id').on('o.status', '=', knex.raw("'COMPLETE'"))
-    })
-    .leftJoin('product_categories as pc', 'pc.product_id', 'p.id')
-    .leftJoin('category as c', 'pc.category_id', 'c.id')
     .select([
-      'p.id', 'o.id as order_id', 'it.id as item_id',
+      'p.id',
       'p.title',
-      knex.raw(`jsonb_agg(distinct c) as categories`),
-      knex.raw('sum(it.quantity) as quantity'),
-      knex.raw('sum(it.available) as available'),
-      knex.raw('sum(it.sold) as sold'),
-      knex.raw('sum(it.defective) as defective'),
+      'subit.quantity',
+      'subit.available',
+      'subit.sold',
+      'subit.defective',
       'o.created_at as ordered_at',
-      'o.id as order_id',
-      'it.sale_price',
-      'it.price',
-      'it.discount',
-      knex.raw(`jsonb_agg(distinct c) as categories`)
+      'ait.sale_price',
+      'ait.price',
+      'ait.discount'
     ])
-    .groupBy([
-      'p.id', 'o.id', 'it.id'
-    ])
+    .leftJoin(
+      knex.from('item as it')
+        .select([
+          'it.product_id as product_id',
+          knex.raw('sum(it.quantity) as quantity'),
+          knex.raw('sum(it.available) as available'),
+          knex.raw('sum(it.sold) as sold'),
+          knex.raw('sum(it.defective) as defective')
+        ])
+        .groupBy('it.product_id')
+        .as('subit'),
+        'subit.product_id',
+        'p.id'
+    )
+    .leftJoin('item as ait', 'ait.product_id', 'p.id')
+    .leftJoin('order as o', function (builder) {
+      builder.on('o.id', 'ait.order_id').on('o.status', '=', knex.raw("'COMPLETE'"))
+    })
     .orderBy([
       { column: 'p.id', order: 'asc' },
-      { column: 'o.created_at', order: 'asc' }
+      { column: 'o.created_at', order: 'desc' }
     ])
 
   if (keyword) {
@@ -91,7 +97,7 @@ export async function find ({ em, page, keyword, per_page, only_available } : Fi
   }
 
   if (only_available) {
-    qnex = qnex.andWhere('available', '>', 0)
+    qnex = qnex.andWhere('subit.available', '>', 0)
   }
 
   // counting 
