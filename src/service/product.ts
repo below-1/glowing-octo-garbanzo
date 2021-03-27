@@ -53,14 +53,38 @@ export async function remove ({ em, id } : DeleteInput) {
 export async function find ({ em, page, keyword, per_page, stock } : FindOptions) {
   let result: any = {}
   const knex = em.getKnex();
-  let qnex = knex.from('product as p').distinctOn('p.id');
-  let columns = [
-    'p.id', 'p.title',
-    knex.raw(`jsonb_agg(distinct c) as categories`)
-  ];
-  let groupBy: any[] = [
-    'p.id'
-  ];
+
+  let qnex = knex
+    .from('product as p')
+    .distinctOn('p.id')
+    .leftJoin('item as it', 'it.product_id', 'p.id')
+    .leftJoin('order as o', function (builder) {
+      builder.on('o.id', 'it.order_id').on('o.status', '=', knex.raw("'COMPLETE'"))
+    })
+    .leftJoin('product_categories as pc', 'pc.product_id', 'p.id')
+    .leftJoin('category as c', 'pc.category_id', 'c.id')
+    .select([
+      'p.id', 'o.id as order_id', 'it.id as item_id',
+      'p.title',
+      knex.raw(`jsonb_agg(distinct c) as categories`),
+      knex.raw('sum(it.quantity) as quantity'),
+      knex.raw('sum(it.available) as available'),
+      knex.raw('sum(it.sold) as sold'),
+      knex.raw('sum(it.defective) as defective'),
+      'o.created_at as ordered_at',
+      'o.id as order_id',
+      'it.sale_price',
+      'it.price',
+      'it.discount',
+      knex.raw(`jsonb_agg(distinct c) as categories`)
+    ])
+    .groupBy([
+      'p.id', 'o.id', 'it.id'
+    ])
+    .orderBy([
+      { column: 'p.id', order: 'asc' },
+      { column: 'o.created_at', order: 'asc' }
+    ])
 
   if (keyword) {
     qnex = qnex.andWhere('p.title', 'ilike', `${keyword}%`)
@@ -79,48 +103,13 @@ export async function find ({ em, page, keyword, per_page, stock } : FindOptions
     result.total_data = total_data;
   }
 
-  // Joining
-  qnex = qnex
-    .leftJoin('product_categories as pc', 'pc.product_id', 'p.id')
-    .leftJoin('category as c', 'pc.category_id', 'c.id');
-
-
-  if (stock) {
-    qnex = qnex.leftJoin('item as it', 'it.product_id', 'p.id')
-      .leftJoin('order as o', (builder) => {
-        builder.on('o.id', 'it.order_id')
-          .on('o.status', '=', knex.raw("'COMPLETE'"))
-      })
-    columns = [
-      ...columns,
-      knex.raw('sum(it.quantity) as quantity'),
-      knex.raw('sum(it.available) as available'),
-      knex.raw('sum(it.sold) as sold'),
-      knex.raw('sum(it.defective) as defective'),
-      'o.created_at as ordered_at',
-      'o.id as order_id'
-    ]
-    groupBy = [
-      ...groupBy,
-      'o.id'
-    ]
-  }
-
-  // append grouping
-  qnex = qnex
-    .orderBy([
-      { column: 'p.id', order: 'asc' },
-      { column: 'o.created_at', order: 'asc' }
-    ])
-    .groupBy(groupBy);
-
   if (per_page) {
     qnex = qnex.limit(per_page).offset(offset!);
     result.total_page = total_page!;
   }
 
-  console.log(qnex.select(columns).toSQL())
-  result.items = await qnex.select(columns)
+  console.log(qnex.toSQL())
+  result.items = await qnex
   return result;
 }
 

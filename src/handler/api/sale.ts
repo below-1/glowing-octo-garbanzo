@@ -101,6 +101,37 @@ export default async (fastify: FastifyInstance) => {
         if (!product) {
           throw new Error(`product(id=${it.product_id}) can't be found`)
         }
+
+        // Get all stocks
+        const stock_items = await em.find(Item, 
+          { 
+            $and: [
+              { product: it.product_id }, 
+              { status: 'COMPLETE' }
+            ]
+           }, 
+          { orderBy: { created_at: QueryOrder.DESC } })
+        // For each stock try to substract the quantity out of it
+        // If it stock is less than requested quantity (become 0)
+        //   : substract it and move on to next stock
+        // Else
+        //   : Get out!!!
+        let n_qty = it.quantity
+        for (let sit of stock_items) {
+          let sit_available = sit.available
+          sit_available -= n_qty
+          if (sit_available < 0) {
+            sit.available = 0
+            n_qty -= sit.available
+          } else {
+            sit.available = sit_available
+            em.persist(sit)
+            break
+          }
+        }
+
+        const total_stock = stock_items.map(sit => sit.available).reduce((a, b) => a + b, 0)
+
         order_item.item = item
         order_item.product = product
         order_item.order = order
