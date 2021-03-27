@@ -9,6 +9,7 @@ interface FindOptions {
   page: number;
   keyword: string;
   per_page: number;
+  only_available: boolean;
 }
 
 interface ProductUpdateInput {

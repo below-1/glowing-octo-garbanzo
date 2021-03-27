@@ -22,7 +22,7 @@ export interface FindOptions {
   keyword: string;
   page: number;
   per_page?: number;
-  stock?: boolean;
+  only_available?: boolean;
 }
 
 export async function create ({ em, payload } : CreateInput) {
@@ -50,7 +50,7 @@ export async function remove ({ em, id } : DeleteInput) {
   await em.removeAndFlush(em.getReference(Product, id))
 }
 
-export async function find ({ em, page, keyword, per_page, stock } : FindOptions) {
+export async function find ({ em, page, keyword, per_page, only_available } : FindOptions) {
   let result: any = {}
   const knex = em.getKnex();
 
@@ -88,6 +88,10 @@ export async function find ({ em, page, keyword, per_page, stock } : FindOptions
 
   if (keyword) {
     qnex = qnex.andWhere('p.title', 'ilike', `${keyword}%`)
+  }
+
+  if (only_available) {
+    qnex = qnex.andWhere('available', '>', 0)
   }
 
   // counting 
