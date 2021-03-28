@@ -25,75 +25,7 @@ interface OpInstanceUpdate {
 
 export default async (fastify: FastifyInstance) => {
 
-  fastify.post('/', {
-    handler: async (request, reply) => {
-      const payload = request.body as any;
-      const em = request.em;
-      let opex = new Opex();
-      opex.name = payload.name;
-      opex.created_at = payload.created_at ? new Date(payload.created_at) : new Date();
-      em.persist(opex);
-      await em.flush();
-      reply.send(opex);
-    }
-  })
-
-  fastify.put<{ Params: ID, Body: any }>('/:id', {
-    handler: async (request, reply) => {
-      const em = request.em;
-      const id = request.id;
-      const payload = request.body;
-      let opex = await em.findOne(Opex, id);
-      if (!opex) {
-        reply.send({
-          message: 'not_found'
-        })
-        return;
-      }
-      opex.name = payload.name;
-      opex.updated_at = new Date();
-      em.persist(opex)
-      await em.flush()
-      reply.send(opex)
-    }
-  })
-
   fastify.get('/', {
-    handler: async (request, reply) => {
-      const options = request.query as any;
-      const em = request.em
-      const result = await em.find(Opex, {})
-      reply.send(result)
-    }
-  })
-
-  fastify.get<{ Params: ID }>('/:id', {
-    handler: async (request, reply) => {
-      const em = request.em;
-      const id = request.params.id;
-      const opex = await em.findOne(Opex, id, ['admin']);
-      if (!opex) {
-        reply.status(404).send({
-          message: 'NOT_FOUND'
-        })
-        return;
-      }
-      reply.send(opex)
-    }
-  })
-
-  fastify.delete<{ Params: ID }>('/:id', {
-    handler: async (request, reply) => {
-      const em = request.em;
-      const { id } = request.params;
-      await em.removeAndFlush(em.getReference(Opex, id))
-      reply.send({
-        message: 'OK'
-      })
-    }
-  })
-
-  fastify.get('/op_instances', {
     handler: async (request, reply) => {
       const options = request.query as any;
       const em = request.em
@@ -125,7 +57,7 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
-  fastify.post<{ Body: OpInstanceInput }>('/op_instances', {
+  fastify.post<{ Body: OpInstanceInput }>('/', {
     handler: async (request, reply) => {
       const payload = request.body as any;
       const em = request.em;
@@ -148,7 +80,7 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
-  fastify.delete<{ Params: ID }>('/op_instances/:id', {
+  fastify.delete<{ Params: ID }>('/:id', {
     handler: async (request, reply) => {
       const id = request.params.id
       const em = request.em
@@ -158,7 +90,7 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
-  fastify.get<{ Params: ID }>('/op_instances/:id', {
+  fastify.get<{ Params: ID }>('/:id', {
     handler: async (request, reply) => {
       const id = request.params.id
       const em = request.em
@@ -167,7 +99,7 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
-  fastify.put<{ Params: ID, Body: OpInstanceUpdate }>('/op_instances/:id', {
+  fastify.put<{ Params: ID, Body: OpInstanceUpdate }>('/:id', {
     handler: async (request, reply) => {
       const id = request.params.id
       const payload = request.body

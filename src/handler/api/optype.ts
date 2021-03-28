@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { OperatingExpense as Opex } from '../../entity/OperatingExpense'
+import { ID } from './commons'
 
 interface OpData {
   name: string;
@@ -38,23 +39,26 @@ export default async (fastify: FastifyInstance) => {
         .offset(offset)
     }
     console.log(
-          query.select([
+      query.select([
         'op.id',
         'op.name',
         'op.created_at',
-        knex.raw('count(t.id) as total_trans')
+        knex.raw('count(t.id) as total_trans'),
+        knex.raw('sum(t.nominal) as nominal_trans')
       ])
-      .groupBy('op.id').toSQL()
+      .groupBy('op.id')
+      .toSQL()
     )
     result.items = await query.select([
         'op.id',
         'op.name',
         'op.created_at',
-        knex.raw('count(t.id) as total_trans')
+        knex.raw('count(t.id) as total_trans'),
+        knex.raw('sum(t.nominal) as nominal_trans')
       ])
       .groupBy('op.id')
-    console.log('here')
-    console.log(result)
+    console.log('result.items')
+    console.log(result.items)
 
     reply.send(result)
   })
@@ -73,6 +77,44 @@ export default async (fastify: FastifyInstance) => {
       reply.send({
         error: err.message
       })
+    }
+  })
+
+  fastify.get<{ Params: ID }>('/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const id = request.params.id
+      const opex = await em.findOne(Opex, id)
+      if (!opex) {
+        reply.status(404).send({ message: 'NOT_FOUND' })
+        return
+      }
+      reply.send(opex)
+    }
+  })
+
+  fastify.put<{ Params: ID, Body: OpData }>('/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const id = request.params.id
+      let opex = await em.findOne(Opex, id)
+      if (!opex) {
+        reply.status(404).send({ message: 'NOT_FOUND' })
+        return
+      }
+      opex.name = request.body.name
+      em.persist(opex)
+      await em.flush()
+      reply.send(opex)
+    }
+  })
+
+  fastify.delete<{ Params: ID }>('/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const id = request.params.id
+      await em.removeAndFlush(em.getReference(Opex, id))
+      reply.send({ message: 'OK' })
     }
   })
 
