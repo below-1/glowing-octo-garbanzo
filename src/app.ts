@@ -26,7 +26,7 @@ declare module 'fastify' {
 export async function create_app () {
     const orm = await MikroORM.init<PostgreSqlDriver>(mikroOrmConfig as any);
     const server = fastify({
-        logger: false
+        logger: true
     })
 
     server.addHook("onRequest", (request, reply, done) => {

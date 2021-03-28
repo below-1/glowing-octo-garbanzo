@@ -231,6 +231,7 @@ export default async (fastify: FastifyInstance) => {
         em.persist(delay)
       }
 
+      em.persist(order_items)
       em.persist(transaction)
       em.persist(order)
       await em.flush()
@@ -251,11 +252,15 @@ export default async (fastify: FastifyInstance) => {
       //   .where({ id })
       //   .getSingleResult()
       const order = await em.findOne(Order, id, ['transaction', 'delay', 'user'])
+      const orderItems = await em.find(OrderItem, { order }, { populate: ['product', 'item'] })
       if (!order) {
         reply.status(404).send({ message: 'NOT_FOUND' })
         return;
       }
-      reply.send(order)
+      reply.send({
+        order,
+        items: orderItems
+      })
     }
   })
 
@@ -289,6 +294,7 @@ export default async (fastify: FastifyInstance) => {
     handler: async (request, reply) => {
       const em = request.em
       const { id } = request.params
+      console.log('here')
       let order = await em.findOne(Order, id)
       if (!order) {
         throw new Error(`Order(id=${id}) can't be found`)
@@ -297,10 +303,7 @@ export default async (fastify: FastifyInstance) => {
         throw new Error(`Order(id=${id}) is not purchasement`)
       }
 
-      let order_items = await em.createQueryBuilder(OrderItem, 'oi')
-        .joinAndSelect('oi.item', 'i')
-        .where({'oi.order_id': id})
-        .getResultList();
+      let order_items = await em.find(OrderItem, { order: id }, { populate: ['item'] })
 
       order_items.forEach(oi => {
         let item = oi.item
@@ -308,6 +311,7 @@ export default async (fastify: FastifyInstance) => {
         em.persist(item)
       })
 
+      em.remove(order_items)
       em.remove(order)
       await em.flush()
       return {
