@@ -3,7 +3,7 @@ set session_replication_role = 'replica';
 
 create table "operating_expense" ("id" serial primary key, "name" varchar(255) not null, "created_at" timestamptz(0) not null, "updated_at" timestamptz(0) null);
 
-create table "product" ("id" serial primary key, "title" varchar(255) not null, "summary" varchar(255) not null, "created_at" timestamptz(0) not null, "updated_at" timestamptz(0) null, "content" varchar(255) null);
+create table "product" ("id" serial primary key, "title" varchar(255) not null, "summary" varchar(255) not null, "created_at" timestamptz(0) not null, "updated_at" timestamptz(0) null, "content" varchar(255) null, "unit" varchar(255) null);
 
 create table "category" ("id" serial primary key, "title" varchar(255) not null, "meta_title" varchar(255) null, "content" varchar(255) null);
 

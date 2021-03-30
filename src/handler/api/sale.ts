@@ -11,7 +11,21 @@ import { OrderItem } from '../../entity/OrderItem'
 import { Transaction, Status, Mode, Type } from '../../entity/Transaction'
 import { Delay, Type as DelayType } from '../../entity/Delay'
 import BigNumber from 'big.js'
-import { addDays } from 'date-fns'
+import { addDays, lastDayOfMonth, set, format } from 'date-fns'
+import { readFileSync, createWriteStream } from 'fs'
+import { join } from 'path'
+
+const SQL_sale_report_month = readFileSync(
+  join(process.cwd(), 'sql/sale_report_month.sql')
+).toString()
+const SQL_count_trans_in_month = readFileSync(
+  join(process.cwd(), 'sql/count_trans_in_month.sql')
+).toString()
+
+interface ReportOption {
+  year: number;
+  month: number;
+}
 
 interface FindOptions {
   per_page: number;
@@ -317,6 +331,60 @@ export default async (fastify: FastifyInstance) => {
       return {
         message: 'OK'
       }
+    }
+  })
+
+  fastify.get<{ Querystring: ReportOption }>('/report', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          year: { type: 'integer' },
+          month: { type: 'integer' }
+        }
+      }
+    },
+    handler: async (request, reply) => {
+      const em = request.em
+      const opts = request.query
+      // start day
+      const t0 = new Date(opts.year, opts.month - 1 , 1)
+      const last_day = lastDayOfMonth(t0).getDate()
+      const t1 = set(t0, { date: last_day })
+
+      const t0_str = format(t0, 'yyyy-MM-dd')
+      const t1_str = format(t1, 'yyyy-MM-dd')
+
+      const knex = em.getKnex()
+      const result = await knex.raw(SQL_sale_report_month, [t0_str, t1_str]).stream()
+
+      // const prom = new Promise((resolve, reject) => {
+      //   let writable = createWriteStream(join(process.cwd(), 'foobar'))
+      //   // record previous fields
+      //   let prev: any = {}
+      //   result.on('data', function (chunk) {
+      //     // same order
+      //     let row: any = {}
+      //     if (prev.id == chunk.id) {
+      //       row.id = ''
+      //     }
+      //     console.log(chunk)
+      //     writable.write(chunk)
+      //   })
+      //   writable.on('close', () => {
+      //     resolve('ok')
+      //   })
+
+      //   writable.on('error', (err) => {
+      //     console.log(err)
+      //     reject('error')
+      //   })
+
+      //   result.pipe(writable)
+      // })
+
+      // const res = await prom
+      reply.send('ok')
     }
   })
 

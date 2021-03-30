@@ -23,4 +23,7 @@ export class Product {
 
     @Property({ nullable: true })
     content?: string;
+
+    @Property({ nullable: true })
+    unit?: string;
 }

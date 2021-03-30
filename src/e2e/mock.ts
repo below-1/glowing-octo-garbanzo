@@ -90,7 +90,8 @@ async function main() {
     .map(i => ({
       title: chance.name(),
       summary: chance.sentence({ words: 5 }),
-      categories_id: chance.pickset(categories_ids, 3)
+      categories_id: chance.pickset(categories_ids, 3),
+      unit: 'pcs'
     }))
     .map(payload => api({
       method: 'post',
@@ -206,49 +207,49 @@ async function main() {
   // console.log(items_response)
   const ALL_ITEMS: any[] = items_response.data
 
-  // const sale_responses_proms = ALL_ITEMS
-  //   .map((stock_item: any) => {
-  //     const quantity = chance.natural({ min: 2, max: 5 })
-  //     const trans_nominal = quantity * (stock_item.sale_price - (stock_item.sale_price * stock_item.discount))
-  //     const items = [
-  //       {
-  //         product_id: stock_item.product,
-  //         item_id: stock_item.id,
-  //         quantity
-  //       }
-  //     ]
-  //     let payload = {
-  //       customer_id: chance.pickone(customers_ids),
-  //       tax: 0,
-  //       created_at: (chance.date({ year: 2020 }) as Date).toISOString(),
-  //       content: chance.sentence({ words: 12 }),
-  //       discount: chance.pickone([0, 5, 10]),
-  //       status: 'COMPLETE',
-  //       trans_status: 'SUCCESS',
-  //       trans_mode: 'ONLINE',
-  //       trans_nominal,
-  //       items
-  //     }
-  //     return api({
-  //       method: 'post',
-  //       url: '/api/v1/sale',
-  //       data: payload,
-  //       headers: {
-  //         authorization: `Bearer ${token}`
-  //       }
-  //     })
-  //   })
+  const sale_responses_proms = ALL_ITEMS
+    .map((stock_item: any) => {
+      const quantity = chance.natural({ min: 2, max: 5 })
+      const trans_nominal = quantity * (stock_item.sale_price - (stock_item.sale_price * stock_item.discount))
+      const items = [
+        {
+          product_id: stock_item.product,
+          item_id: stock_item.id,
+          quantity
+        }
+      ]
+      let payload = {
+        customer_id: chance.pickone(customers_ids),
+        tax: 0,
+        created_at: (chance.date({ year: 2020 }) as Date).toISOString(),
+        content: chance.sentence({ words: 12 }),
+        discount: chance.pickone([0, 5, 10]),
+        status: 'COMPLETE',
+        trans_status: 'SUCCESS',
+        trans_mode: 'ONLINE',
+        trans_nominal,
+        items
+      }
+      return api({
+        method: 'post',
+        url: '/api/v1/sale',
+        data: payload,
+        headers: {
+          authorization: `Bearer ${token}`
+        }
+      })
+    })
 
-  // try {
-  //   const sale_responses: any[] = await Promise.all(sale_responses_proms)
-  //   const sales = sale_responses.map(sr => sr.data)
-  //   console.log(sales)
-  // } catch (err) {
-  //   console.log(err)
-  //   if (err.response) {
-  //     console.log(err.response.data)
-  //   }
-  // }
+  try {
+    const sale_responses: any[] = await Promise.all(sale_responses_proms)
+    const sales = sale_responses.map(sr => sr.data)
+    console.log(sales)
+  } catch (err) {
+    console.log(err)
+    if (err.response) {
+      console.log(err.response.data)
+    }
+  }
 
   await app.close()
 }

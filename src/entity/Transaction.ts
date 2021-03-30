@@ -1,10 +1,11 @@
 import { randomBytes } from 'crypto'
-import { Entity, Enum, Property, PrimaryKey, ManyToOne, OneToOne } from '@mikro-orm/core'
+import { Entity, Enum, Unique, Property, PrimaryKey, ManyToOne, OneToOne, BeforeCreate } from '@mikro-orm/core'
 import { Order } from './Order'
 import { OperatingExpense as Opex } from './OperatingExpense'
 import { Delay } from './Delay'
 import { AccountsReceivable } from './AccountsReceivable'
 import { User } from './User'
+import Chance from 'chance'
 
 export enum Type {
     CREDIT = 'CREDIT',
@@ -70,4 +71,24 @@ export class Transaction {
 
     @Property({ nullable: true, columnType: 'text' })
     content?: string;
+
+    @BeforeCreate()
+    generate_code () {
+        if (!this.user) {
+            throw new Error('USER_INVALID')
+        }
+        if (!this.created_at) {
+            throw new Error('DATE_INVALID')
+        }
+        const admin_code = `${this.user.id}`.padStart(2, '0')
+        const date = this.created_at
+        const year = date.getFullYear()
+        const month = date.getMonth() + 1
+        const year_code = `${year}`
+        const month_code = `${month}`.padStart(2, '0')
+        const type_code = this.type == 'DEBIT' ? '02' : '01'
+        const chance = new Chance()
+        const un = chance.string({ length: 4, alpha: true, numeric: true, casing: 'upper' })
+        this.code = `${admin_code}-${type_code}-${year_code}${month_code}-${un}`
+    }
 }
