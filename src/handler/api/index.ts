@@ -11,6 +11,7 @@ import ar_handler from './ar'
 import ap_handler from './ap'
 import opex_handler from './opex'
 import optype_handler from './optype'
+import report_handler from './report'
 
 export default async (fastify: FastifyInstance) => {
 
@@ -49,5 +50,6 @@ export default async (fastify: FastifyInstance) => {
     fastify.register(ap_handler, { prefix: '/ap' })
     fastify.register(opex_handler, { prefix: '/opex' })
     fastify.register(optype_handler, { prefix: '/optype' })
+    fastify.register(report_handler, { prefix: '/report' })
 
 }
