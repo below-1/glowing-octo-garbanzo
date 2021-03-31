@@ -50,8 +50,7 @@ export default async (fastify: FastifyInstance) => {
 
         if (next_total.gt(total)) {
           reply.status(500).send({
-            message: `total payment is greater than what should be paid. \
-(next_total=${next_total.toFixed(4)}) > (total=${total.toFixed(4)})`
+            message: `total payment is greater than what should be paid. (next_total=${next_total.toFixed(4)}) > (total=${total.toFixed(4)})`
           })
           return
         } else if (next_total.eq(total)){
@@ -122,7 +121,7 @@ export default async (fastify: FastifyInstance) => {
       const id = request.params.id
 
       const delay = await em.findOne(Delay, { id }, {
-        populate: ['payments', 'order']
+        populate: ['payments', 'order', 'order.user', 'order.transaction']
       })
       if (!delay) {
         throw new Error(`Delay(id=${id}) can't be found`)
