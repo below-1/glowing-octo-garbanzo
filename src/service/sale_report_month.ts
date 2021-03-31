@@ -9,6 +9,7 @@ import { addDays, lastDayOfMonth, set, format } from 'date-fns'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import carbone from 'carbone'
+import { print } from './report'
 
 const SQL_sale_report_month = readFileSync(
   join(process.cwd(), 'sql/sale_report_month.sql')
@@ -48,26 +49,19 @@ async function gen_sale_report_month (year: number, month: number) {
   const t1_str = format(t1, 'yyyy-MM-dd')
   let items: any = await orm.em.execute(SQL_sale_report_month, [t0_str, t1_str])
   items = expand_items(items)
-  console.log(items)
   const render_data = {
     items,
     month,
     year
   }
 
-  const TEMP_PATH = join(process.cwd(), 'report', 'templates', 'sale_report_month.xlsx')
-  const render_result: Buffer = await new Promise((resolve, reject) => {
-    carbone.render(TEMP_PATH, render_data, (err, result: Buffer) => {
-      if (err) {
-        return reject(err)
-      }
-      resolve(result)
-    })
-  })
   const padded_month = `${month}`.padStart(2, '0')
   const filename = `sale_report_month_${year}_${padded_month}.xlsx`
-  const report_filename = join(process.cwd(), 'report', filename)
-  writeFileSync(report_filename, render_result)
+  print({
+    data: render_data,
+    template: 'sale_report_month.xlsx',
+    destination: filename
+  })
   return filename
 }
 
