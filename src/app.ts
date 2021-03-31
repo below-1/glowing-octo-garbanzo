@@ -34,6 +34,10 @@ export async function create_app () {
         done();
     })
     server.register(blipp);
+    server.register(fstatic, {
+        root: join(process.cwd(), 'report'),
+        prefix: '/report'
+    })
     server.register(cors, { origin: true })
     server.register(auth_handler, { prefix: '/auth' })
     server.register(api_handler, { prefix: '/api/v1' })
