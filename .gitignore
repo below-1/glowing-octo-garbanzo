@@ -1,4 +1,5 @@
 /dist
 /statics
 /node_modules
+/report
 .env
