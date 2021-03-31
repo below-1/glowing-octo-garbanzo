@@ -45,8 +45,7 @@ export default async (fastify: FastifyInstance) => {
 
         if (next_total.gt(total)) {
           reply.status(500).send({
-            message: `total payment is greater than what should be paid. \
-(next_total=${next_total.toFixed(4)}) > (total=${total.toFixed(4)})`
+            message: `total payment is greater than what should be paid. (next_total=${next_total.toFixed(4)}) > (total=${total.toFixed(4)})`
           })
           return
         } else if (next_total.eq(total)){
