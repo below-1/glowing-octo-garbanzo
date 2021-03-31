@@ -21,11 +21,14 @@ export default async (fastify: FastifyInstance) => {
     },
     handler: async (request, reply) => {
       const opts = request.query
-      const filename = join(__dirname, '..', '..', 'service', 'sale_report_month.js')
-      const worker = new Worker(filename, { workerData: opts })
+      const filename = join(__dirname, '..', '..', 'service', 'report_monthly.js')
+      const worker_input = {
+        ...opts,
+        entity: 'sale',
+        sql: 'sale_report_month.sql'
+      }
+      const worker = new Worker(filename, { workerData: worker_input })
       worker.on('message', result => {
-        console.log(result)
-        console.log('result')
         reply
           .header('Content-disposition', `attachment; filename=${result}`)
           .sendFile(result)
@@ -57,11 +60,14 @@ export default async (fastify: FastifyInstance) => {
     },
     handler: async (request, reply) => {
       const opts = request.query
-      const filename = join(__dirname, '..', '..', 'service', 'purchase_report_month.js')
-      const worker = new Worker(filename, { workerData: opts })
+      const worker_input = {
+        ...opts,
+        sql: 'purchase_report_month.sql',
+        entity: 'purchase'
+      }
+      const filename = join(__dirname, '..', '..', 'service', 'report_monthly.js')
+      const worker = new Worker(filename, { workerData: worker_input })
       worker.on('message', result => {
-        console.log(result)
-        console.log('result')
         reply
           .header('Content-disposition', `attachment; filename=${result}`)
           .sendFile(result)
