@@ -25,6 +25,7 @@ interface DeleteParams {
 }
 
 export default async (fastify: FastifyInstance) => {
+
   fastify.post<{ Body: PaymentPayload, Params: ID }>('/:id/payments', {
     handler: async (request, reply) => {
       const em = request.em;
@@ -82,7 +83,7 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
-  fastify.delete<{ Params: DeleteParams }>('/:id/payments/:id_payment', {
+  fastify.delete<{ Params: DeleteParams }>('/payments/:id_payment', {
     handler: async (request, reply) => {
       const { id, id_payment } = request.params
       const em = request.em
@@ -102,6 +103,52 @@ export default async (fastify: FastifyInstance) => {
           message: err.message
         })        
       }
+    }
+  })
+
+  fastify.get<{ Params: ID }>('/payments/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const id = request.params.id
+      let payment = await em.findOne(Transaction, id)
+      if (!payment) {
+        reply.status(404).send({ message: 'NOT_FOUND' })
+        return
+      } else {
+        reply.send(payment)
+      }
+    }
+  })
+
+  fastify.put<{ Params: ID, Body: PaymentPayload }>('/payments/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const id = request.params.id
+      const payload = request.body
+      const nominal = new BigNumber(payload.nominal)
+      let payment = await em.findOne(Transaction, id, { populate: ['delay', 'delay.payments'] })
+
+      // check constraint
+      const delay = payment!.delay
+      const delay_total = new BigNumber(delay.total)
+      let total_paid = delay!.payments!.toArray()
+        .filter(p => p.id != id).map(p => new BigNumber(p.nominal))
+        .reduce((a, b) => a.plus(b), new BigNumber(0))
+      total_paid = total_paid.plus(nominal)
+      if (total_paid.gt(delay_total)) {
+        reply.status(500).send({ message: 'pembayaran melebihi jumlah utang' })
+        return
+      }
+
+      payment!.nominal = payload.nominal
+      payment!.mode = payload.mode
+      if (payload.created_at) {
+        payment!.created_at = new Date(payload.created_at)
+      }
+
+      em.persist(payment!)
+      await em.flush()
+      reply.send({ message: 'OK' })
     }
   })
 

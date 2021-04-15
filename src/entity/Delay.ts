@@ -1,4 +1,4 @@
-import { Collection, Entity, Enum, ManyToOne, OneToMany, OneToOne, Property, PrimaryKey } from '@mikro-orm/core'
+import { Collection, Entity, Enum, ManyToOne, OneToMany, OneToOne, Property, PrimaryKey, QueryOrder } from '@mikro-orm/core'
 import { User } from './User'
 import { Transaction } from './Transaction'
 import { Order } from './Order'
@@ -20,7 +20,7 @@ export class Delay {
   @OneToOne({ onDelete: 'cascade' })
   order: Order;
 
-  @OneToMany(() => Transaction, transaction => transaction.delay)
+  @OneToMany(() => Transaction, transaction => transaction.delay, { orderBy: { created_at: QueryOrder.DESC } })
   payments = new Collection<Transaction>(this);
 
   @ManyToOne({ onDelete: 'set null', hidden: true })

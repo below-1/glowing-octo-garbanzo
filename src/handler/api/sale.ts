@@ -286,7 +286,10 @@ export default async (fastify: FastifyInstance) => {
       const orders = await em.find(Order, { type: 2 }, {
         populate: ['transaction', 'delay', 'user'],
         limit: per_page,
-        offset
+        offset,
+        orderBy: {
+          created_at: 'DESC'
+        }
       })
 
       return {
