@@ -29,12 +29,11 @@ export default async (fastify: FastifyInstance) => {
       }
       const worker = new Worker(filename, { workerData: worker_input })
       worker.on('message', result => {
-        reply
-          .header('Content-disposition', `attachment; filename=${result}`)
-          .sendFile(result)
+        console.log(result)
+        reply.send({ path: `/report/${result}` })
       })
-      worker.on('error', err => {
-        reply.status(500).send({ err })
+      worker.on('error', error => {
+        reply.status(500).send({ error })
       })
       worker.on('exit', code => {
         let scode = 200
@@ -68,9 +67,7 @@ export default async (fastify: FastifyInstance) => {
       const filename = join(__dirname, '..', '..', 'service', 'report_monthly.js')
       const worker = new Worker(filename, { workerData: worker_input })
       worker.on('message', result => {
-        reply
-          .header('Content-disposition', `attachment; filename=${result}`)
-          .sendFile(result)
+        reply.send({ path: `/report/${result}` })
       })
       worker.on('error', err => {
         reply.status(500).send({ err })

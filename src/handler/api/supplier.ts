@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import * as fastify from 'fastify';
 import * as serv from '../../service/user'
+import * as purchase_serv from '../../service/purchase'
 import { ID } from './commons'
 import { User } from '../../entity/User'
 import { Role } from '../../entity/Role'
@@ -92,6 +93,19 @@ export default async (fastify: FastifyInstance) => {
         return
       }
       reply.send(supplier)
+    }
+  })
+
+  fastify.get<{ 
+    Params: ID,
+    Querystring: purchase_serv.PurchaseFilter 
+  }>('/:id/purchase', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const opts = request.query
+      const supplier_id = request.params.id
+      const result = await purchase_serv.find_for_supplier({ em, opts, supplier_id, })
+      reply.send(result)
     }
   })
 }

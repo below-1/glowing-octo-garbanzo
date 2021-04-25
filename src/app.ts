@@ -26,7 +26,7 @@ declare module 'fastify' {
 export async function create_app () {
     const orm = await MikroORM.init<PostgreSqlDriver>(mikroOrmConfig as any);
     const server = fastify({
-        logger: true
+        logger: false
     })
 
     server.addHook("onRequest", (request, reply, done) => {
@@ -37,6 +37,10 @@ export async function create_app () {
     server.register(fstatic, {
         root: join(process.cwd(), 'report'),
         prefix: '/report'
+    })
+    server.register(fstatic, {
+        root: join(process.cwd(), 'statics'),
+        decorateReply: false // the reply decorator has been added by the first plugin registration
     })
     server.register(cors, { origin: true })
     server.register(auth_handler, { prefix: '/auth' })

@@ -2,6 +2,15 @@ import { FastifyInstance } from 'fastify'
 import { QueryOrder } from '@mikro-orm/core'
 import { User } from '../../entity/User'
 import { Role } from '../../entity/Role'
+import { ID } from './commons'
+import bcrypt from 'bcrypt'
+
+interface UpdateAdminPayload {
+  first_name: string;
+  last_name: string;
+  mobile?: string;
+  email?: string;
+}
 
 export default async (fastify: FastifyInstance) => {
 
@@ -14,6 +23,45 @@ export default async (fastify: FastifyInstance) => {
       } catch (err) {
         console.log(err)
         reply.status(500).send({ message: 'gagal mengambil data admin' })
+      }
+    }
+  })
+
+  fastify.put<{ Params: ID, Body: UpdateAdminPayload }>('/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const id = request.params.id
+      const payload = request.body
+      let admin = await em.findOne(User, id)
+      if (!admin) {
+        reply.status(400).send({ message: 'NOT_FOUND' })
+        return
+      }
+      admin.first_name = payload.first_name
+      admin.last_name = payload.last_name
+      admin.mobile = payload.mobile
+      admin.email = payload.email
+      em.persist(admin)
+
+      try {
+        await em.flush()
+        reply.send({ status: 'OK' })
+      } catch (err) {
+        console.log(err)
+        reply.status(500).send({ message: 'gagal mengubah data admin' })
+      }
+    }
+  })
+
+  fastify.get<{ Params: ID }>('/:id', {
+    handler: async (request, reply) => {
+      const em = request.em
+      const id = request.params.id
+      let admin = await em.findOne(User, id)
+      if (!admin) {
+        reply.status(400).send({ message: 'NOT_FOUND' })
+      } else {
+        reply.send(admin)
       }
     }
   })

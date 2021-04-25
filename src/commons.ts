@@ -9,3 +9,8 @@ export class BigNumberType extends Type<BigNumber, string> {
     return new BigNumber(value)
   }
 }
+
+export function rupiah (x: number | string) {
+  if (x === null) return ''
+  return 'rp, ' + x.toLocaleString( "id-ID" )
+}

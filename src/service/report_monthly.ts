@@ -1,4 +1,5 @@
 import { isMainThread, parentPort, workerData } from 'worker_threads';
+import { rupiah } from '../commons'
 
 if (isMainThread) {
   process.exit(1)
@@ -24,6 +25,11 @@ function expand_items (items: any[]) {
   items.forEach((item, index) => {
     let sub_result = []
     let { items: subs, ...rest } = item
+    rest.nominal = rupiah(parseInt(rest.nominal))
+    subs = subs.map((s: any) => ({
+      ...s,
+      price: rupiah(parseInt(s.price))
+    }))
     const [ first, ...resits ] = subs
     index += 1
     sub_result.push({
@@ -63,6 +69,7 @@ async function gen_sale_report_month (input: ReportInput) {
     year
   }
 
+  console.log(render_data)
   const padded_month = `${month}`.padStart(2, '0')
   const filename = `${entity}_report_month_${year}_${padded_month}.xlsx`
   print({

@@ -13,6 +13,8 @@ select
       'unit', it.quantity,
       'available', it.available,
       'defective', it.defective,
+      'sold', it.sold,
+      'quantity', it.available + it.defective + it.sold,
       'unit', p.unit
     ) 
   ) as "items"

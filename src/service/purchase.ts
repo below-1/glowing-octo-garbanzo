@@ -257,3 +257,60 @@ export async function find_purchase_by_id ({ em, id } : { em: EntityManager, id:
     items
   }
 }
+
+function purchase_query_builder (em: EntityManager, opts: PurchaseFilter) {
+  let qb = em.createQueryBuilder(Order, "o")
+    .where({ type: 1 })
+    .leftJoin('o.user', 's')
+    .leftJoin('o.transaction', 't')
+
+  if (opts.date_filter) {
+    qb = qb.where({
+      created_at: { 
+        $and: [
+          { $gte: opts.date_filter.before },
+          { $lte: opts.date_filter.after }
+        ]
+       }
+    })
+  }
+
+  if (opts.keyword) {
+    qb = qb.andWhere('s.first_name ilike ?', [`${opts.keyword}%`])
+  }
+
+  return qb;
+}
+
+export async function find_for_supplier({ em, supplier_id, opts } : { em: EntityManager, supplier_id: number, opts: PurchaseFilter }) {
+  let query_conditions: any = {
+    type: 1,
+    user: supplier_id
+  }
+  if (opts.date_filter) {
+    query_conditions.created_at = { 
+      $and: [
+        { $gte: opts.date_filter!.before },
+        { $lte: opts.date_filter!.after }
+      ]
+    }
+  }
+  if (opts.keyword) {
+    query_conditions.keyword = {
+      $ilike: `${opts.keyword}%`
+    }
+  }
+  const repo = em.getRepository(Order)
+  const total = await repo.count(query_conditions)
+  const options = { 
+    limit: opts.per_page, 
+    offset: opts.page * opts.per_page,
+    populate: ['transaction']
+   }
+  const [ items, count ] = await repo.findAndCount(query_conditions, options)
+  return {
+    items,
+    total_data: count,
+    total_page: Math.ceil(count / opts.per_page)
+  }
+}
