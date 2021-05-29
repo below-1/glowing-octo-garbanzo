@@ -60,6 +60,7 @@ export async function find ({ em, page, keyword, per_page, only_available } : Fi
     .select([
       'p.id',
       'p.title',
+      'p.unit',
       'subit.quantity',
       'subit.available',
       'subit.sold',
@@ -131,7 +132,7 @@ export async function findOne ({ em, stock, id } : { em: EntityManager, stock: b
     .leftJoin('category as c', 'pc.category_id', 'c.id')
 
   let columns = [
-    'p.id', 'p.title', 'p.summary', 'p.content',
+    'p.id', 'p.title', 'p.unit', 'p.summary', 'p.content',
     knex.raw(`jsonb_agg(c) as categories`)
   ];
 

@@ -23,7 +23,7 @@ export class Delay {
   @OneToMany(() => Transaction, transaction => transaction.delay, { orderBy: { created_at: QueryOrder.DESC } })
   payments = new Collection<Transaction>(this);
 
-  @ManyToOne({ onDelete: 'set null', hidden: true })
+  @ManyToOne({ onDelete: 'set null' })
   admin: User;
 
   @Property()

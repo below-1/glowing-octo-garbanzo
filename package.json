@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "pnpx jest --detectOpenHandles --runInBand --rootDir dist",
-    "dev": "pnpx concurrently \"tsc -w\" \"nodemon dist/index.js\"",
-    "watch:ts": "pnpx tsc -w",
-    "watch:app": "pnpx nodemon dist/index.js",
-    "watch:e2e": "pnpx nodemon dist/e2e/index.js",
+    "test": "npx jest --detectOpenHandles --runInBand --rootDir dist",
+    "dev": "npx concurrently \"tsc -w\" \"nodemon dist/index.js\"",
+    "watch:ts": "npx tsc -w",
+    "watch:app": "npx nodemon dist/index.js",
+    "watch:e2e": "npx nodemon dist/e2e/index.js",
     "dump_schema": "cd dist/ && pnpx mikro-orm schema:create --dump > ../database.sql",
     "mock_db": "node dist/e2e/mock.js"
   },
