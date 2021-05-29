@@ -188,6 +188,7 @@ export default async (fastify: FastifyInstance) => {
         .join('order as o', 'd.order_id', 'o.id')
         .join('user as u', 'u.id', 'o.user_id')
         .leftJoin('transaction as t', 't.delay_id', 'd.id')
+        .where('d.type', '=', 'RECEIVABLE')
       let result: any = {}
       let offset = 0
 

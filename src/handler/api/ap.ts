@@ -122,7 +122,7 @@ export default async (fastify: FastifyInstance) => {
       const id = request.params.id
 
       const delay = await em.findOne(Delay, { id }, {
-        populate: ['payments', 'order']
+        populate: ['payments', 'order', 'admin']
       })
       if (!delay) {
         throw new Error(`Delay(id=${id}) can't be found`)
@@ -138,6 +138,7 @@ export default async (fastify: FastifyInstance) => {
       const em = request.em
       const knex = em.getKnex()
       let qnex = knex('delay as d')
+        .join('user as empl', 'empl.id', 'd.admin_id')
         .join('order as o', 'd.order_id', 'o.id')
         .join('user as u', 'u.id', 'o.user_id')
         .leftJoin('transaction as t', 't.delay_id', 'd.id')
@@ -166,6 +167,8 @@ export default async (fastify: FastifyInstance) => {
         'd.complete',
         'd.due_date',
         'd.total',
+        'empl.id as empl_id',
+        'empl.first_name as empl_name',
         'u.id as customer_id',
         'u.first_name as customer',
         knex.raw('sum(t.nominal) as paid'),
@@ -173,7 +176,7 @@ export default async (fastify: FastifyInstance) => {
         'o.grand_total as order_grand_total',
         'o.created_at as order_created_at'
       ])
-        .groupBy(['d.id', 'u.id', 'o.id'])
+        .groupBy(['d.id', 'u.id', 'o.id', 'empl.id'])
         .orderBy('d.created_at', 'DESC')
 
       reply.send(result)
