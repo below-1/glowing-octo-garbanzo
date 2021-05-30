@@ -14,6 +14,7 @@ import optype_handler from './optype'
 import report_handler from './report'
 import admin_handler from './admin'
 import employer_handler from './employer'
+import items_handler from './items'
 
 export default async (fastify: FastifyInstance) => {
 
@@ -55,5 +56,6 @@ export default async (fastify: FastifyInstance) => {
     fastify.register(report_handler, { prefix: '/report' })
     fastify.register(admin_handler, { prefix: '/admin' })
     fastify.register(employer_handler, { prefix: '/employer' })
+    fastify.register(items_handler, { prefix: '/items' })
 
 }

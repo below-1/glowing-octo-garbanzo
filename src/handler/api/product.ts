@@ -19,6 +19,10 @@ interface ProductUpdateInput {
   selected_categories: number[];
 }
 
+interface ProductUpdateDefective {
+  defective: number;
+}
+
 export default async (fastify: FastifyInstance) => {
 
   fastify.post<{Body: serv.ProductData}>('/', {
