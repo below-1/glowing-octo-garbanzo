@@ -5,7 +5,11 @@ import { ID } from './commons'
 import { Product } from '../../entity/Product'
 import { Status as TransStatus, Mode as TransMode } from '../../entity/Transaction'
 import { Order, Status as OrderStatus } from '../../entity/Order'
-import { OrderItem } from '../../entity/OrderItem'
+import { Item } from '../../entity/Item'
+
+interface UpdateDefectPayload {
+  defective: number;
+}
 
 export default async (fastify: FastifyInstance) => {
 
@@ -41,6 +45,52 @@ export default async (fastify: FastifyInstance) => {
     //   }
     // })
     reply.send(items);
+  });
+
+  fastify.put<{ Body: UpdateDefectPayload, Params: ID }>('/:id/defect', async (request, reply) => {
+    const em = request.em;
+    const id = request.params.id;
+    const { defective } = request.body;
+    try {
+      let item = await em.findOne(Item, id);
+      if (!item) {
+        reply.status(404).send({
+          message: 'NOT FOUND'
+        });
+        return;
+      }
+      if (defective > item.available) {
+        reply.status(404).send({
+          message: "[defect] can't be greater than [available]"
+        });
+        return;
+      }
+      if (defective > item.defective) {
+        item.available = item.available - (defective - item.defective);
+      } else {
+        item.available = item.available + (item.defective - defective);
+      }
+      item.defective = defective;
+      console.log('after changing');
+      console.log(item);
+      em.persist(item);
+
+      try {
+        await em.flush();
+        reply.send({ message: 'OK' });
+      } catch (err) {
+        console.log(err);
+        reply.status(500).send({
+          message: 'terjadi kesalahan saat menyimpan data'
+        })
+      }
+
+    } catch (err) {
+      console.log(err);
+      reply.status(500).send({
+        message: 'terjadi kesalahan saat mengambil data item'
+      })
+    }
   });
 
 }
