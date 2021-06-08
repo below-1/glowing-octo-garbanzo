@@ -13,6 +13,7 @@ interface UpdateEmployerPayload {
 }
 
 export default async (fastify: FastifyInstance) => {
+
   fastify.get('/', async (request, reply) => {
     const em = request.em
       try {

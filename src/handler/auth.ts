@@ -11,7 +11,9 @@ export default async function (fastify: FastifyInstance) {
     url: '/register',
     handler: async (request, reply) => {
       let payload: any = request.body
-      payload.role = 'ADMIN'
+      if (!payload.role) {
+        payload.role = 'ADMIN'
+      }
       try {
         const user = await register({ em: request.em, payload })
         reply.send({ status: 'OK' })
