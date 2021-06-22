@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+	.just-link {
+		@apply text-blue-900 underline font-bold;
+	}
+  button.primary {
+   @apply text-white font-bold bg-green-600 px-4 py-1; 
+  }
+}
+
+@layer utilities {
+
+  .cont > section {
+    @apply mb-4;
+  }
+
+  .cont > section.header, .cont > section.pagination {
+    @apply px-4 py-2 bg-white;
+  }
+
+  .cont > section.header > .title-count {
+    @apply flex mr-4;
+  }
+
+  .cont > section.header > .title-count > div:first-child {
+    @apply bg-gray-200 font-bold px-2 py-1 flex items-center;
+  }
+
+  .cont > section.header > .title-count > div:last-child {
+    @apply bg-blue-600 text-white font-bold flex items-center px-2;
+  }
+
+  .cont > section.header > .group-input {
+    @apply border border-gray-300 flex items-stretch mr-4;
+  }
+
+  .cont > section.header > .group-input > label {
+    @apply bg-gray-200 inline-block flex items-center px-3 text-gray-500;
+  }
+
+  .cont > section.header > .group-input > input, .cont > section.header > .group-input > select {
+    @apply font-thin px-2 py-1;
+  }
+
+  button.primary, a.primary {
+    @apply appearance-none bg-green-500 text-white px-4 flex items-center font-bold;
+  }
+
+  button.outline-primary {
+    @apply appearance-none border border-green-500 px-4 flex items-center font-bold;
+  }
+
+  .rd-action {
+    @apply appearance-none rounded-full p-1 hover:bg-gray-300;
+  }
+}

@@ -1,0 +1,14 @@
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+    outline: none;
+}
+
+select::-ms-expand {
+    display: none;
+}
+
+select {
+  background: none;
+}

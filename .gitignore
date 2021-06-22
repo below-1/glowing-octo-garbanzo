@@ -1,5 +1,4 @@
 /dist
-/statics
 /node_modules
 /report/*.xlsx
 .env
