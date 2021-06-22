@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { Worker } from 'worker_threads';
 import { join } from 'path'
+import { monthlySummary } from '../../service/monthly_summary'
 
 interface ReportOption {
   year: number;
@@ -81,6 +82,31 @@ export default async (fastify: FastifyInstance) => {
         }
         reply.status(scode).send({ message })
       })
+    }
+  })
+
+  fastify.get<{ 
+    Querystring: ReportOption,
+    Params: { tp: 'sale' | 'purchase' }
+  }>('/:type/monthly_summary', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          year: { type: 'integer' },
+          month: { type: 'integer' }
+        }
+      }
+    },
+    handler: async (request, reply) => {
+      const opts = request.query
+      const em = request.em;
+      const res = await monthlySummary({
+        ...opts,
+        tp: request.params.tp
+      }, em);
+      console.log(res);
+      return res;
     }
   })
 

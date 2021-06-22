@@ -7,7 +7,12 @@ import { add } from 'date-fns'
 import bcrypt from 'bcrypt'
 
 export default async function ({ em, payload } : { em: EntityManager, payload: any }) {
-    const user = await em.findOne(User, { role: Role.ADMIN, username: payload.username })
+    const user = await em.findOne(User, { 
+            $or: [
+                { role: Role.ADMIN },
+                { role: Role.EMPLOYER }
+            ]
+            , username: payload.username })
     if (!user) {
         throw new Error('USER_NOT_FOUND')
     }

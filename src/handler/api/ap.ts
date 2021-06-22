@@ -11,6 +11,7 @@ interface FindOptions {
   keyword?: string;
   page?: number;
   per_page?: number;
+  limit?: number;
 }
 
 interface PaymentPayload {
@@ -162,7 +163,7 @@ export default async (fastify: FastifyInstance) => {
         qnex.limit(per_page).offset(offset)
       }
 
-      result.items = await qnex.select([
+      let q = qnex.select([
         'd.id',
         'd.complete',
         'd.due_date',
@@ -175,9 +176,14 @@ export default async (fastify: FastifyInstance) => {
         'o.id as order_id',
         'o.grand_total as order_grand_total',
         'o.created_at as order_created_at'
-      ])
+      ]);
+      if (opts.limit) {
+        q.limit(opts.limit)
+      }
+
+      result.items = await q
         .groupBy(['d.id', 'u.id', 'o.id', 'empl.id'])
-        .orderBy('d.created_at', 'DESC')
+        .orderBy('d.created_at', 'DESC');
 
       reply.send(result)
     }
