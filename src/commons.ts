@@ -22,3 +22,4 @@ export function sql(name: string)  {
   const f = readFileSync(path);
   return f.toString();
 }
+
