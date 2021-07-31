@@ -5,6 +5,7 @@ import { OperatingExpense as Opex } from './OperatingExpense'
 import { Delay } from './Delay'
 import { AccountsReceivable } from './AccountsReceivable'
 import { User } from './User'
+import { Tool } from './Tool'
 import Chance from 'chance'
 
 export enum Type {

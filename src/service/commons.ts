@@ -1,4 +1,5 @@
 import { EntityManager } from '@mikro-orm/postgresql'
+import { Knex } from '@mikro-orm/knex';
 
 export interface DeleteInput {
   em: EntityManager;
@@ -14,21 +15,14 @@ export type DateFilter = DateBetween;
 
 export interface ListResult<T> {
   items: T[];
-  total_page: number;
-  total_data: number;
+  totalPage: number;
+  totalData: number;
   page: number;
-  per_page: number;
+  perPage: number;
 }
 
-export interface PagingFilter {
+export interface BaseFilter {
   page: number;
   perPage: number;
   keyword?: string;
-  type: 'paging';
-}
-
-export interface AllFilter {
-  type: 'all';
-}
-
-export type BaseFilter = AllFilter | PagingFilter;
+};

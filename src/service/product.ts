@@ -2,8 +2,7 @@ import { QueryOrder, wrap } from '@mikro-orm/core'
 import { EntityManager } from '@mikro-orm/postgresql'
 import { Product } from '../entity/Product'
 import { Category } from '../entity/Category'
-import { DeleteInput } from './commons';
-import { count, listing2, ListingParams } from './listing';
+import { DeleteInput } from './commons'
 
 export interface ProductData extends Partial<Product> {
   categories_id: number[];
@@ -25,11 +24,6 @@ export interface FindOptions {
   per_page?: number;
   only_available?: boolean;
 }
-
-type ExtraFilter = {
-  keyword: string
-};
-type ProductFilter = ExtraFilter & ListingParams;
 
 export async function create ({ em, payload } : CreateInput) {
   let product = new Product()
@@ -56,23 +50,26 @@ export async function remove ({ em, id } : DeleteInput) {
   await em.removeAndFlush(em.getReference(Product, id))
 }
 
-export const findPaging = async (em: EntityManager, filter: ProductFilter) => {
+export async function find ({ em, page, keyword, per_page, only_available } : FindOptions) {
+  let result: any = {}
   const knex = em.getKnex();
-  const columns = [
-    'p.id',
-    'p.title',
-    'p.unit',
-    'subit.quantity',
-    'subit.available',
-    'subit.sold',
-    'subit.defective',
-    'o.created_at as ordered_at',
-    'ait.sale_price',
-    'ait.price',
-    'ait.discount'
-  ];
-  let query = knex
+
+  let qnex = knex
     .from('product as p')
+    .distinctOn('p.id')
+    .select([
+      'p.id',
+      'p.title',
+      'p.unit',
+      'subit.quantity',
+      'subit.available',
+      'subit.sold',
+      'subit.defective',
+      'o.created_at as ordered_at',
+      'ait.sale_price',
+      'ait.price',
+      'ait.discount'
+    ])
     .leftJoin(
       knex.from('item as it')
         .select([
@@ -91,86 +88,41 @@ export const findPaging = async (em: EntityManager, filter: ProductFilter) => {
     .leftJoin('order as o', function (builder) {
       builder.on('o.id', 'ait.order_id').on('o.status', '=', knex.raw("'COMPLETE'"))
     })
-    .andWhere('p.title', 'ilike', `${filter.keyword}%`);
-  const { total_data } = await count(
-    knex.from('product as p')
-      .andWhere('p.title', 'ilike', `${filter.keyword}%`));
-  return listing2(query.distinctOn('p.id').select(columns), filter, total_data);
-};
+    .orderBy([
+      { column: 'p.id', order: 'asc' },
+      { column: 'o.created_at', order: 'desc' }
+    ])
 
-// export async function find ({ em, page, keyword, per_page, only_available } : FindOptions) {
-//   let result: any = {}
-//   const knex = em.getKnex();
+  if (keyword) {
+    qnex = qnex.andWhere('p.title', 'ilike', `${keyword}%`)
+  }
 
-//   let qnex = knex
-//     .from('product as p')
-//     .distinctOn('p.id')
-//     .select([
-//       'p.id',
-//       'p.title',
-//       'p.unit',
-//       'subit.quantity',
-//       'subit.available',
-//       'subit.sold',
-//       'subit.defective',
-//       'o.created_at as ordered_at',
-//       'ait.sale_price',
-//       'ait.price',
-//       'ait.discount'
-//     ])
-//     .leftJoin(
-//       knex.from('item as it')
-//         .select([
-//           'it.product_id as product_id',
-//           knex.raw('sum(it.quantity) as quantity'),
-//           knex.raw('sum(it.available) as available'),
-//           knex.raw('sum(it.sold) as sold'),
-//           knex.raw('sum(it.defective) as defective')
-//         ])
-//         .groupBy('it.product_id')
-//         .as('subit'),
-//         'subit.product_id',
-//         'p.id'
-//     )
-//     .leftJoin('item as ait', 'ait.product_id', 'p.id')
-//     .leftJoin('order as o', function (builder) {
-//       builder.on('o.id', 'ait.order_id').on('o.status', '=', knex.raw("'COMPLETE'"))
-//     })
-//     .orderBy([
-//       { column: 'p.id', order: 'asc' },
-//       { column: 'o.created_at', order: 'desc' }
-//     ])
+  if (only_available) {
+    qnex = qnex.andWhere('subit.available', '>', 0)
+  }
 
-//   if (keyword) {
-//     qnex = qnex.andWhere('p.title', 'ilike', `${keyword}%`)
-//   }
+  // counting 
+  let total_page: number;
+  let offset: number;
+  let total_data: number;
+  if (per_page) {
+    let qnex_count = knex.from('product as p')
+    const _total_data: any[] = await qnex_count.count()
+    total_data = parseInt(_total_data[0]['count'])
+    total_page = Math.ceil(total_data / per_page)
+    offset = page * per_page;
+    result.total_data = total_data;
+  }
 
-//   if (only_available) {
-//     qnex = qnex.andWhere('subit.available', '>', 0)
-//   }
+  if (per_page) {
+    qnex = qnex.limit(per_page).offset(offset!);
+    result.total_page = total_page!;
+  }
 
-//   // counting 
-//   let total_page: number;
-//   let offset: number;
-//   let total_data: number;
-//   if (per_page) {
-//     let qnex_count = knex.from('product as p')
-//     const _total_data: any[] = await qnex_count.count()
-//     total_data = parseInt(_total_data[0]['count'])
-//     total_page = Math.ceil(total_data / per_page)
-//     offset = page * per_page;
-//     result.total_data = total_data;
-//   }
-
-//   if (per_page) {
-//     qnex = qnex.limit(per_page).offset(offset!);
-//     result.total_page = total_page!;
-//   }
-
-//   console.log(qnex.toSQL())
-//   result.items = await qnex
-//   return result;
-// }
+  console.log(qnex.toSQL())
+  result.items = await qnex
+  return result;
+}
 
 export async function findOne ({ em, stock, id } : { em: EntityManager, stock: boolean, id: number }) {
   const knex = em.getKnex();

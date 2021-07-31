@@ -6,12 +6,12 @@ import { Order, Status } from '../../entity/Order'
 import { Delay, Type } from '../../entity/Delay'
 import { Transaction, Type as TransType, Status as TransStatus, Mode } from '../../entity/Transaction'
 import { ID } from './commons'
-import * as serv from '../../service/delay';
 
 interface FindOptions {
-  keyword: string;
-  page: number;
-  per_page: number;
+  keyword?: string;
+  page?: number;
+  per_page?: number;
+  limit?: number;
 }
 
 interface PaymentPayload {
@@ -179,26 +179,61 @@ export default async (fastify: FastifyInstance) => {
   })
 
   fastify.get<{ Querystring: FindOptions }>('/', {
-    schema: {
-      querystring: {
-        type: 'object',
-        properties: {
-          per_page: { type: 'number', default: 10 },
-          page: { type: 'number', default: 0 },
-          keyword: { type: 'string', default: '' }
-        }
-      }
-    },
     handler: async (request, reply) => {
       const opts = request.query
-      const { per_page, page, keyword } = opts;
-      const em = request.em;
-      const result = await serv.findPaging(em, {
-        ...opts,
-        type: 'RECEIVABLE',
-        completeOnly: false
-      });
-      return result;
+      const { per_page, page, keyword } = opts
+      const em = request.em
+      const knex = em.getKnex()
+      let qnex = knex('delay as d')
+        .join('user as empl', 'empl.id', 'd.admin_id')
+        .join('order as o', 'd.order_id', 'o.id')
+        .join('user as u', 'u.id', 'o.user_id')
+        .leftJoin('transaction as t', 't.delay_id', 'd.id')
+        .where('d.type', '=', 'RECEIVABLE')
+      let result: any = {}
+      let offset = 0
+
+      if (keyword) {
+        qnex = qnex.where('u.first_name', 'ilike', `${keyword}%`)
+      }
+
+      if (page !== undefined && per_page !== undefined) {
+        let count_qnex = qnex.clone()
+        let [ { total } ] = await count_qnex.select(knex.raw('count(*) as total'))
+        let total_data = parseInt(total)
+        let total_page = Math.ceil(total_data / per_page)
+        result.total_data = total_data
+        result.total_page = total_page
+        offset = page * per_page
+
+        qnex.limit(per_page).offset(offset)
+      }
+
+      let q = qnex.select([
+        'd.id',
+        'd.complete',
+        'd.due_date',
+        'd.total',
+        'empl.id as empl_id',
+        'empl.first_name as empl_name',
+        'u.id as customer_id',
+        'u.first_name as customer',
+        knex.raw('sum(t.nominal) as paid'),
+        'o.id as order_id',
+        'o.grand_total as order_grand_total',
+        'o.created_at as order_created_at'
+      ]);
+      // result.items = await 
+
+      if (opts.limit) {
+        q.limit(opts.limit)
+      }
+
+      result.items = await q
+        .groupBy(['d.id', 'u.id', 'o.id', 'empl.id'])
+        .orderBy('d.created_at', 'DESC');
+
+      reply.send(result)
     }
   })
 }

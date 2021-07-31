@@ -36,7 +36,6 @@
   "dependencies": {
     "@mikro-orm/core": "^4.4.4",
     "@mikro-orm/postgresql": "^4.4.4",
-    "@mikro-orm/knex": "^4.4.4",
     "@types/big.js": "^6.0.2",
     "bcrypt": "^5.0.1",
     "big.js": "^6.0.3",

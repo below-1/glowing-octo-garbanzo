@@ -1,9 +1,7 @@
 import { wrap } from '@mikro-orm/core'
 import { EntityManager } from '@mikro-orm/postgresql'
 import { Category } from '../entity/Category'
-import { DeleteInput } from './commons'
-import { Knex } from '@mikro-orm/knex';
-import { count, listing, listing2, listingAll, ListingParams, ListingResult } from './listing';
+import { DeleteInput, BaseFilter } from './commons'
 
 type CreateInput = {
   em: EntityManager,
@@ -14,6 +12,10 @@ type UpdateInput = {
   em: EntityManager,
   payload: Partial<Category>,
   id: number
+}
+
+interface FindOptions extends BaseFilter {
+  em: EntityManager
 }
 
 export async function create ({ em, payload } : CreateInput) {
@@ -39,28 +41,25 @@ export async function remove ({ em, id } : DeleteInput) {
   await em.removeAndFlush(em.getReference(Category, id))
 }
 
-const baseListingQuery = (knex: Knex) => knex.from('category as c')
-    .leftJoin('product_categories as pc', 'pc.category_id', 'c.id')
-    .leftJoin('product as p', 'p.id', 'pc.product_id');    
-
-export const countAll = async (em: EntityManager) => {
-  const total_data = await em.count(Category);
-  return { total_data };
-};
-    
-export const findPaging = async (em: EntityManager, options: ListingParams) => {
-  const knex = em.getKnex();
-  const { total_data } = await countAll(em);
-  const query = knex.from('category as c')
+export async function find (options : FindOptions): Promise<any[]> {
+  const knex = options.em.getKnex();
+  const baseQuery = knex.from('category c')
     .leftJoin('product_categories as pc', 'pc.category_id', 'c.id')
     .leftJoin('product as p', 'p.id', 'pc.product_id')
+    .groupBy('c.id');
+
+  const findQuery = baseQuery
+    .clone()
     .select([
-      'c.id', 
-      'c.title', 
-      'c.meta_title', 
-      'c.content', 
-      knex.raw('count(p.id) as total_product')])
-    .groupBy('c.id')
-    .orderBy('total_product', 'DESC');
-  return listing2(query, options, total_data);
-};
+        'c.id', 
+        'c.title', 
+        'c.meta_title', 
+        'c.content', 
+        knex.raw('count(p.id) as total_product')]);
+  const countQuery = baseQuery.clone().count();
+  const count: any[] = await countQuery;
+  const total_data = parseInt(count[0]['count']);
+  const total_page = Math.ceil(total_data / options.perPage);
+  const items = await findQuery;
+  return items;
+}

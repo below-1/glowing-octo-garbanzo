@@ -3,7 +3,6 @@ import { EntityManager } from '@mikro-orm/postgresql'
 import { User } from '../entity/User'
 import { Role } from '../entity/Role'
 import { DeleteInput } from './commons'
-import { listing2, count } from './listing';
 
 interface CreateInput {
   em: EntityManager;
@@ -15,10 +14,11 @@ interface UpdateInput extends CreateInput {
 }
 
 interface FindOptions {
-  role?: Role;
+  em: EntityManager;
+  role: Role;
   keyword: string;
   page: number;
-  per_page: number;
+  per_page?: number;
 }
 
 export async function create ({ em, payload } : CreateInput) {
@@ -44,18 +44,30 @@ export async function remove ({ em, id } : DeleteInput) {
   await em.removeAndFlush(em.getReference(User, id))
 }
 
-export const findPaging = async (em: EntityManager, filter: FindOptions) => {
-  const knex = em.getKnex();
-  const columns = ['id', 'role', 'username', 'first_name', 'last_name', 'last_login'];
-  let query = knex.from('user as u');
-  if (filter.role) {
-    query = query.andWhere('role', '=', filter.role);
+export async function find ({ em, role, keyword, per_page, page } : FindOptions) {
+  let result: any = {}
+  const knex = em.getKnex()
+  let qnex = knex.from("user as u").where({ "u.role": role})
+
+  if (keyword) {
+    qnex = qnex.andWhere('u.first_name', 'ilike', `${keyword}%`)
   }
-  const { total_data } = await count(query);
-  const listingParams = {
-    page: filter.page,
-    per_page: filter.per_page
-  };
-  const result = await listing2(query.select(columns), listingParams, total_data);
+
+  let total_page: number;
+  let offset: number;
+  let total_data: number;
+  if (per_page) {
+    let qnex_count = qnex.clone()
+    const _total_data: any[] = await qnex_count.count()
+    total_data = parseInt(_total_data[0]['count'])
+    total_page = Math.ceil(total_data / per_page)
+    const real_page = page ? page : 0;
+    offset = real_page * per_page;
+    qnex = qnex.limit(per_page).offset(offset);
+    result.total_page = total_page;
+    result.total_data = total_data;
+  }
+
+  result.items = await qnex.select();
   return result;
 }
