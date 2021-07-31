@@ -7,6 +7,6 @@ export type FinderOptions = {
 }
 
 export async function findEntity (options: FinderOptions) {
-  const knex = options.em.getKnex();
+  // const knex = options.em.getKnex();
 
 }

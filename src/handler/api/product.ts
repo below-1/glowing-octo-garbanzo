@@ -9,7 +9,6 @@ interface FindOptions {
   page: number;
   keyword: string;
   per_page: number;
-  only_available: boolean;
 }
 
 interface ProductUpdateInput {
@@ -85,13 +84,22 @@ export default async (fastify: FastifyInstance) => {
   })
 
   fastify.get<{ Querystring: FindOptions }>('/', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          per_page: { type: 'number', default: 10 },
+          page: { type: 'number', default: 0 },
+          keyword: { type: 'string', default: '' }
+        }
+      }
+    },
     handler: async (request, reply) => {
+      const em = request.em;
+      const filter = request.query;
       try {
-        const result = await serv.find({
-          em: request.em,
-          ...request.query
-        })
-        reply.send(result)
+        const result = await serv.findPaging(em, filter);
+        reply.send(result);
       } catch (err) {
         console.log(err)
         reply.status(500).send({

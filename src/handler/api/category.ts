@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify'
 import * as fastify from 'fastify';
 import * as serv from '../../service/category'
 import { ID } from './commons'
+import { ListingParams } from '../../service/listing'
 import { Category } from '../../entity/Category'
 
 export default async (fastify: FastifyInstance) => {
@@ -58,17 +59,23 @@ export default async (fastify: FastifyInstance) => {
     }
   })
 
-  fastify.get('/', async (request, reply) => {
-    try {
-        const items = await serv.find({
-          em: request.em
-        })
-        reply.send(items)
-      } catch (err) {
-        console.log(err)
-        reply.status(500).send({ message: err.message })
+
+  fastify.get<{ Querystring: ListingParams }>('/', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          page: { type: 'number', min: 0, default: 0 },
+          per_page: { type: 'number', min: 0, default: 10 }
+        }
       }
-  })
+    },
+    handler: async (request, reply) => {
+      return serv.findPaging(request.em, request.query);
+    }
+  });
+
+  fastify.get('/count', (request, reply) => serv.countAll(request.em));
 
   fastify.get<{ Params: ID }>('/:id', {
     handler: async (request, reply) => {

@@ -68,14 +68,25 @@ export default async (fastify: FastifyInstance) => {
   })
 
   fastify.get<{ Querystring: FindOptions }>('/', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          per_page: { type: 'number', default: 10 },
+          page: { type: 'number', default: 0 },
+          keyword: { type: 'string', default: '' },
+          role: { type: 'string' },
+        }
+      }
+    },
     handler: async (request, reply) => {
-      const options = request.query;
+      const _options = request.query;
+      const options = {
+        ..._options,
+        role: Role.SUPPLIER
+      };
       try {
-        const result = await serv.find({
-          em: request.em,
-          role: Role.SUPPLIER,
-          ...options
-        })
+        const result = await serv.findPaging(request.em, options);
         reply.send(result)
       } catch (err) {
         console.log(err)
@@ -83,6 +94,7 @@ export default async (fastify: FastifyInstance) => {
       }
     }
   })
+  
   fastify.get<{ Params: ID }>('/:id', {
     handler: async (request, reply) => {
       const em = request.em

@@ -4,6 +4,13 @@ import { User } from '../../entity/User'
 import { Role } from '../../entity/Role'
 import { ID } from './commons'
 import bcrypt from 'bcrypt'
+import * as serv from '../../service/user'
+
+interface FindOptions {
+  keyword: string;
+  page: number;
+  per_page: number;
+}
 
 interface UpdateEmployerPayload {
   first_name: string;
@@ -14,16 +21,32 @@ interface UpdateEmployerPayload {
 
 export default async (fastify: FastifyInstance) => {
 
-  fastify.get('/', async (request, reply) => {
-    const em = request.em
+  fastify.get<{ Querystring: FindOptions }>('/', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          per_page: { type: 'number', default: 10 },
+          page: { type: 'number', default: 0 },
+          keyword: { type: 'string', default: '' }
+        }
+      }
+    },
+    handler: async (request, reply) => {
+      const options = {
+        ...request.query,
+        role: Role.EMPLOYER
+      };
+      const em = request.em
       try {
-      const items = await em.find(User, { role: Role.EMPLOYER })
-      reply.send({ items })
-    } catch (err) {
-      console.log(err)
-      reply.status(500).send({ message: 'gagal mengambil data pegawai' })
+        const items = await serv.findPaging(em, options);
+        reply.send({ items })
+      } catch (err) {
+        console.log(err)
+        reply.status(500).send({ message: 'gagal mengambil data pegawai' })
+      }
     }
-  })
+  });
 
   fastify.put<{ Params: ID, Body: UpdateEmployerPayload }>('/:id', {
     handler: async (request, reply) => {
