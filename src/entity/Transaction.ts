@@ -46,6 +46,9 @@ export class Transaction {
     @OneToOne({ onDelete: 'cascade', nullable: true })
     order: Order;
 
+    @OneToOne({ onDelete: 'cascade', nullable: true })
+    tool: Tool;
+
     @ManyToOne({ onDelete: 'cascade', nullable: true })
     opex: Opex;
 

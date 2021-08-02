@@ -6,7 +6,7 @@ export type FinderOptions = {
   keyword: number;
 }
 
-export async function findEntity (options: FinderOptions) {
-  const knex = options.em.getKnex();
+// export async function findEntity (options: FinderOptions) {
+//   const knex = options.em.getKnex();
 
-}
+// }

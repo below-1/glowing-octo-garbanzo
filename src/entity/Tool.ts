@@ -1,5 +1,5 @@
-import { Entity, Enum, ManyToOne, OneToMany, Property, PrimaryKey } from '@mikro-orm/core'
-// import { Transaction } from './Transaction'
+import { Entity, Enum, ManyToOne, OneToMany, OneToOne, Property, PrimaryKey } from '@mikro-orm/core'
+import { Transaction } from './Transaction'
 
 @Entity()
 export class Tool {
@@ -9,8 +9,8 @@ export class Tool {
   @Property()
   name: string;
 
-  // @OneToMany(() => Transaction, transaction => transaction.opex)
-  // transactions: Transaction[];
+  @OneToOne({ entity: () => Transaction, inversedBy: 'tool', nullable: true, onDelete: 'cascade' })
+  transaction: Transaction;
 
   @Property()
   created_at: Date = new Date();
